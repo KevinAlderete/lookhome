@@ -1,0 +1,68 @@
+---
+import ListingDetail from "@/components/astro/listing/ListingDetail.astro";
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import { normalizeListing, type PublicListing } from "@/features/listings/public";
+import { apiServer } from "@/lib/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+let listing: PublicListing | null = null;
+let loadError = false;
+try {
+  const raw = await apiServer<any>(
+    Astro.request,
+    `/listings/${encodeURIComponent(Astro.params.slug ?? "")}`,
+  );
+  listing = normalizeListing(raw.listing ?? raw);
+} catch {
+  loadError = true;
+}
+
+const title = listing?.title ? `${listing.title} | LOOKHOME` : "Anuncio | LOOKHOME";
+---
+
+<PublicLayout
+  title={title}
+  description={listing?.description ?? "Conoce este anuncio de alquiler en LOOKHOME."}
+  socialImage={listing?.photos[0]?.url}
+  noindex={loadError}
+>
+  {listing ? (
+    <ListingDetail listing={listing} />
+  ) : (
+    <section
+      class="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6"
+      aria-labelledby="listing-unavailable-title"
+    >
+      <p class="text-sm font-semibold text-terracotta-strong">Anuncios LOOKHOME</p>
+      <h1
+        id="listing-unavailable-title"
+        class="mt-2 text-3xl font-bold text-warm-gray sm:text-4xl"
+      >
+        {loadError ? "No pudimos cargar este anuncio" : "Anuncio no disponible"}
+      </h1>
+      <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-warm-gray/75">
+        {loadError
+          ? "Comprueba tu conexión e inténtalo de nuevo."
+          : "Puede haberse pausado o retirado. Busca otros espacios disponibles."}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3">
+        {loadError && (
+          <a
+            href={`/listings/${encodeURIComponent(Astro.params.slug ?? "")}`}
+            class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/20 bg-white px-5 font-semibold text-warm-gray hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+          >
+            Reintentar
+          </a>
+        )}
+        <a
+          href="/buscar"
+          class="inline-flex min-h-11 items-center rounded-xl bg-terracotta-strong px-5 font-semibold text-white hover:bg-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+        >
+          Buscar otros espacios
+        </a>
+      </div>
+    </section>
+  )}
+</PublicLayout>

@@ -1,0 +1,21 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import HostListingCreateForm from "@/components/islands/host/HostListingCreateForm";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+---
+
+<HostLayout title="Nuevo anuncio | LOOKHOME">
+  <div class="space-y-6">
+     <div>
+       <p class="host-eyebrow">Nuevo alojamiento</p>
+          <h1 class="text-balance text-4xl font-black text-warm-gray">Publica tu alojamiento</h1>
+         <p class="mt-2 text-warm-gray/70">
+           Completa estos pasos. Puedes guardar el borrador y continuar después.
+         </p>
+    </div>
+
+     <HostListingCreateForm client:load hostUserId={Astro.locals.user?.id ?? ""} />
+  </div>
+</HostLayout>

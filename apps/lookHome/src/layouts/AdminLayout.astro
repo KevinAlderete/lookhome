@@ -1,0 +1,13 @@
+---
+import AppLayout from "./AppLayout.astro";
+
+const navItems = [];
+---
+
+<AppLayout
+  title={Astro.props.title}
+  navItems={navItems}
+  activePath={Astro.url.pathname}
+>
+  <slot />
+</AppLayout>

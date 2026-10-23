@@ -1,0 +1,74 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import { getHostListingById } from "@/features/host/listings/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const { id } = Astro.params;
+const listing = await getHostListingById(Astro.request, id!);
+const offer = listing.offer;
+const mediaCandidates = [...(listing.media ?? []), ...(offer?.media ?? [])];
+const photos = [...new Map(mediaCandidates.flatMap((photo: any) => {
+  const mediaId = photo.mediaId ?? photo.media?.id ?? photo.id;
+  const url = photo.media?.publicUrl ?? photo.publicUrl ?? photo.url;
+  return mediaId && url ? [[String(mediaId), { id: String(mediaId), url: String(url), isCover: Boolean(photo.isCover), sortOrder: Number(photo.sortOrder ?? 0) }] as const] : [];
+})).values()].sort((left, right) => Number(right.isCover) - Number(left.isCover) || left.sortOrder - right.sortOrder);
+const offerTypes: Record<string, string> = {
+  entire_place: "Vivienda completa",
+  shared_bed: "Cama compartida",
+};
+const mode = offer?.pricing?.rentalMode;
+const typeLabel = offer?.offerType === "private_room"
+  ? "Cuarto/habitación"
+  : offer?.offerType === "shared_bed"
+    ? "Cama compartida"
+    : listing.propertyType === "house"
+      ? "Casa"
+      : listing.propertyType === "apartment"
+        ? "Departamento"
+        : offerTypes[offer?.offerType] ?? "Alojamiento";
+const availabilityRange = offer?.availabilityRules?.find((rule: any) => rule.ruleType === "open_range");
+const formatDate = (value: unknown) => {
+  if (!value) return "";
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? "" : new Intl.DateTimeFormat("es-PE", { dateStyle: "medium", timeZone: "UTC" }).format(date);
+};
+const amenityNames = (offer?.amenities ?? []).map((item: any) => item.amenity?.name ?? item.name).filter(Boolean);
+const rules = listing.rules && typeof listing.rules === "object" ? listing.rules : {};
+const formatPEN = (value: unknown) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? new Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(amount) : "—";
+};
+---
+
+<HostLayout title={`Vista previa · ${listing.title} | LOOKHOME`}>
+  <div class="mx-auto max-w-5xl space-y-6">
+    <header class="flex flex-wrap items-center justify-between gap-3">
+      <div><p class="host-eyebrow">Vista previa privada</p><h1 class="break-words text-4xl font-black text-warm-gray [overflow-wrap:anywhere]">{listing.title || "Anuncio sin título"}</h1><p class="mt-2 text-warm-gray/70">Solo tú puedes ver esta vista.</p></div>
+      <a href={`/host/anuncios/${encodeURIComponent(id!)}/editar`} class="inline-flex min-h-11 items-center rounded-xl bg-terracotta px-4 font-semibold text-[#231f1d] hover:bg-soft-coral focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Volver a editar</a>
+    </header>
+
+    {listing.offerCount > 1 ? (
+      <section role="status" class="rounded-3xl border border-amber-300 bg-amber-50 p-6"><h2 class="text-xl font-bold">Anuncio anterior con varias ofertas</h2><p class="mt-2 text-sm leading-6">Los datos históricos se conservan, pero esta vista no selecciona ni combina sus precios o modalidades.</p></section>
+    ) : offer ? (
+      <article class="space-y-5 overflow-hidden rounded-3xl bg-white p-4 shadow-[0_18px_50px_rgba(80,76,74,0.08)] sm:p-6">
+        {photos.length > 0 && <section aria-label="Fotos del alojamiento" class="grid gap-2 sm:grid-cols-2">{photos.map((photo, index) => <figure class:list={["overflow-hidden rounded-2xl", { "sm:row-span-2": index === 0 }]}><img src={photo.url} alt={index === 0 ? `Portada de ${listing.title}` : `Foto ${index + 1} de ${listing.title}`} width="960" height="720" loading={index === 0 ? "eager" : "lazy"} class="h-52 w-full object-cover sm:h-full sm:min-h-64" />{index === 0 && <figcaption class="bg-cream px-3 py-2 text-xs font-semibold">Portada</figcaption>}</figure>)}</section>}
+        <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div class="space-y-5">
+            <section aria-labelledby="preview-description-title"><p class="font-semibold text-terracotta">{typeLabel} · {mode === "monthly" ? "Por mes" : "Por día"}</p><h2 id="preview-description-title" class="mt-2 break-words text-3xl font-bold text-warm-gray [overflow-wrap:anywhere]">{listing.title}</h2><p class="mt-3 text-warm-gray/75">{listing.description}</p></section>
+            <section aria-labelledby="preview-location-title" class="rounded-2xl bg-cream p-4"><h3 id="preview-location-title" class="font-semibold">Ubicación pública</h3><p class="mt-1">{[listing.address?.line1, listing.address?.district?.name, listing.address?.city?.name, listing.address?.region?.name].filter(Boolean).join(", ")}</p><p class="mt-2 text-xs text-warm-gray/70">La dirección exacta será pública. El piso o interior se mantendrán privados.</p></section>
+            <section aria-labelledby="preview-capacity-title"><h3 id="preview-capacity-title" class="font-semibold">Capacidad y características</h3><div class="mt-2 flex flex-wrap gap-2 text-sm">{offer.maxOccupancy && <span class="rounded-full bg-cream px-3 py-2">Hasta {offer.maxOccupancy} huéspedes</span>}{offer.bedroomCount != null && typeLabel !== "Cuarto/habitación" && <span class="rounded-full bg-cream px-3 py-2">{offer.bedroomCount} dormitorios</span>}{offer.bedCount && <span class="rounded-full bg-cream px-3 py-2">{offer.bedCount} camas</span>}{offer.bathroomCount != null && <span class="rounded-full bg-cream px-3 py-2">{offer.bathroomCount} baños</span>}<span class="rounded-full bg-cream px-3 py-2">{offer.isFurnished ? "Amoblado" : "Sin amoblar"}</span></div></section>
+            <section aria-labelledby="preview-amenities-title"><h3 id="preview-amenities-title" class="font-semibold">Comodidades y reglas</h3>{amenityNames.length ? <p class="mt-2 text-sm leading-6">{amenityNames.join(", ")}</p> : <p class="mt-2 text-sm text-warm-gray/65">Sin comodidades seleccionadas.</p>}<p class="mt-2 text-sm">{[rules.petsAllowed ? "Acepta mascotas" : "No acepta mascotas", rules.smokingAllowed ? "Permite fumar" : "No permite fumar", rules.partiesAllowed ? "Permite fiestas" : "No permite fiestas"].join(" · ")}</p>{rules.notes && <p class="mt-2 whitespace-pre-line text-sm leading-6">{rules.notes}</p>}</section>
+          </div>
+          <aside class="h-fit space-y-4 rounded-2xl border border-warm-gray/12 p-5">
+            <section aria-labelledby="preview-price-title"><h3 id="preview-price-title" class="text-xs font-semibold uppercase tracking-wide text-warm-gray/65">Precio y condiciones</h3><p class="mt-1 text-2xl font-bold">S/ {formatPEN(offer.pricing?.rentAmount)} por {mode === "monthly" ? "mes" : "día"}</p>{mode === "monthly" ? <><p class="mt-2 text-sm text-warm-gray/75">Depósito: S/ {formatPEN(offer.pricing?.depositAmount ?? 0)} (PEN)</p><p class="mt-1 text-sm text-warm-gray/75">Plazo: {offer.pricing?.minTermMonths ?? 1} meses mínimo{offer.pricing?.maxTermMonths ? ` · ${offer.pricing.maxTermMonths} meses máximo` : ""}</p></> : <><p class="mt-2 text-sm text-warm-gray/75">Cargo de limpieza: S/ {formatPEN(offer.pricing?.cleaningFee ?? 0)} (PEN)</p><p class="mt-1 text-sm text-warm-gray/75">Estadía: {offer.pricing?.minStayNights ?? 1} noches mínimo{offer.pricing?.maxStayNights ? ` · ${offer.pricing.maxStayNights} noches máximo` : ""}</p></>}</section>
+            <section aria-labelledby="preview-availability-title" class="border-t border-warm-gray/10 pt-4"><h3 id="preview-availability-title" class="text-sm font-semibold">Disponibilidad</h3><p class="mt-1 text-sm text-warm-gray/75">{mode === "monthly" ? offer.availableFrom ? `Disponible desde ${formatDate(offer.availableFrom)}` : "No especificada" : availabilityRange ? `${formatDate(availabilityRange.startDate)} al ${formatDate(availabilityRange.endDate)}` : "No especificada"}</p><p class="mt-3 text-xs text-warm-gray/65">{mode === "monthly" ? "La solicitud mensual incluye fecha de ingreso y duración." : "La solicitud por día incluye check-in y check-out."}</p></section>
+          </aside>
+        </div>
+      </article>
+    ) : (
+      <section role="status" class="rounded-3xl border border-amber-300 bg-amber-50 p-6"><h2 class="text-xl font-bold">Todavía no hay una oferta</h2><p class="mt-2 text-sm">Completa sus datos para ver la vista previa.</p></section>
+    )}
+  </div>
+</HostLayout>

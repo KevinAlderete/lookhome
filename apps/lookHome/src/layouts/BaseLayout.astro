@@ -1,0 +1,77 @@
+---
+import "@fontsource/varela-round";
+import "@fontsource-variable/open-sans";
+import "../styles/global.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  socialImage?: string;
+  canonical?: string;
+  noindex?: boolean;
+  bodyClass?: string;
+}
+
+const {
+  title = "LOOKHOME",
+  description = "Encuentra habitaciones, propiedades y espacios en LOOKHOME.",
+  socialImage,
+  canonical,
+  noindex = false,
+  bodyClass = "",
+} = Astro.props;
+const absoluteSocialImage = socialImage
+  ? new URL(socialImage, Astro.url).href
+  : undefined;
+const absolutePageUrl = canonical
+  ? new URL(canonical, Astro.url).href
+  : new URL(Astro.url.pathname, Astro.url.origin).href;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:site_name" content="LOOKHOME" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={absolutePageUrl} />
+    <meta name="twitter:card" content={absoluteSocialImage ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {absoluteSocialImage && <meta property="og:image" content={absoluteSocialImage} />}
+    {absoluteSocialImage && <meta property="og:image:alt" content="LOOKHOME" />}
+    {absoluteSocialImage && <meta name="twitter:image" content={absoluteSocialImage} />}
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+
+    {canonical && <link rel="canonical" href={canonical} />}
+    {noindex && <meta name="robots" content="noindex,follow" />}
+  </head>
+  <body class={bodyClass}>
+    <slot />
+  </body>
+</html>
+
+<style>
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  :global(body) {
+    font-family: var(--font-sans);
+  }
+
+  :global(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-heading);
+  }
+</style>

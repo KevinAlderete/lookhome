@@ -1,0 +1,52 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import HostMediaManager from "@/components/islands/host/HostMediaManager";
+import HostMediaGallery from "@/components/islands/host/HostMediaGallery";
+import { getHostListingById } from "@/features/host/listings/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+type MediaView = { id: string; publicUrl: string | null; thumbnailUrl: string | null; sortOrder: number; isCover: boolean };
+function normalize(items: unknown): MediaView[] {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item: any): MediaView[] => {
+    const id = item?.mediaId ?? item?.id ?? item?.media?.id;
+    if (!id) return [];
+    const order = Number(item?.sortOrder);
+    return [{ id: String(id), publicUrl: item?.media?.publicUrl ?? item?.publicUrl ?? null, thumbnailUrl: item?.media?.thumbnailPublicUrl ?? item?.thumbnailPublicUrl ?? null, sortOrder: Number.isFinite(order) && order >= 0 ? order : 0, isCover: Boolean(item?.isCover) }];
+  });
+}
+
+const { id } = Astro.params;
+const listing = await getHostListingById(Astro.request, id!);
+const listingPhotos = normalize(listing.media);
+const offerPhotos = listing.offerCount === 1 ? normalize(listing.offer?.media) : [];
+const uniquePhotos = [...new Map([...listingPhotos, ...offerPhotos].map((photo) => [photo.id, photo])).values()]
+  .map((photo, index) => ({ ...photo, sortOrder: index, isCover: index === 0 }));
+const hasLegacyRoomPhotos = offerPhotos.some((photo) => !listingPhotos.some((item) => item.id === photo.id));
+---
+
+<HostLayout title="Fotos del anuncio | LOOKHOME">
+  <div class="space-y-7">
+    <header>
+      <p class="host-eyebrow">{listing.title || "Anuncio"}</p>
+      <h1 class="text-4xl font-black text-warm-gray">Fotos del anuncio</h1>
+      <p class="mt-2 max-w-2xl text-warm-gray/70">Administra una sola galería. La primera foto es la portada que se muestra en la búsqueda.</p>
+    </header>
+
+    {listing.requiresOfferReview ? (
+      <section role="status" class="rounded-3xl border border-amber-300 bg-amber-50 p-6"><h2 class="text-xl font-bold">Galería protegida</h2><p class="mt-2 text-sm leading-6">Este anuncio conserva varias ofertas anteriores y sus fotos. No se moverán ni combinarán sin una revisión específica.</p><a href={`/host/anuncios/${encodeURIComponent(id!)}/editar`} class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-amber-400 px-4 font-semibold">Volver al anuncio</a></section>
+    ) : (
+      <>
+        {hasLegacyRoomPhotos && <p role="status" class="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">Se encontraron fotos guardadas con el formato anterior. Al guardar el orden se conservarán y pasarán a la galería única del anuncio; los archivos no se duplican.</p>}
+        <div class="flex flex-wrap gap-3" aria-label="Resumen de fotos"><div class="rounded-2xl bg-white px-4 py-3 shadow-sm"><strong class="block text-xl">{uniquePhotos.length}</strong><span class="text-xs text-warm-gray/65">de {12} fotos</span></div></div>
+        <HostMediaManager client:load listingId={id!} listingPhotoCount={uniquePhotos.length} />
+        <section class="rounded-[24px] bg-white p-5 shadow-[0_18px_50px_rgba(80,76,74,0.08)] md:p-7">
+          <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-2xl font-bold text-warm-gray">Galería</h2><p class="mt-1 text-sm text-warm-gray/65">Ordena con los botones o arrastra una foto. La portada siempre es la primera.</p></div><span class="rounded-full bg-cream px-3 py-1 text-sm font-semibold">{uniquePhotos.length} / 12 fotos</span></div>
+          {uniquePhotos.length ? <div class="mt-6"><HostMediaGallery client:load items={uniquePhotos} targetId={id!} targetLabel={listing.title || "anuncio"} /></div> : <div class="mt-6 rounded-2xl border border-dashed border-warm-gray/20 bg-cream/40 px-6 py-10 text-center"><p class="font-semibold">Este anuncio todavía no tiene fotos.</p><p class="mt-1 text-sm text-warm-gray/65">Agrega al menos una foto antes de publicarlo.</p></div>}
+        </section>
+      </>
+    )}
+  </div>
+</HostLayout>

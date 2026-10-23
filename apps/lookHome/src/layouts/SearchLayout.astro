@@ -1,0 +1,16 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import "@/styles/search-page.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+
+const { title, description, noindex = false } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} noindex={noindex} bodyClass="lh-search-page bg-cream text-warm-gray">
+  <slot />
+</BaseLayout>

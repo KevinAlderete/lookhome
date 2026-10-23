@@ -1,0 +1,35 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import FavoritesGrid from "@/components/islands/favorites/FavoritesGrid";
+import { getMyFavorites } from "@/features/favorites/api/server";
+
+export const prerender = false;
+
+let items: Awaited<ReturnType<typeof getMyFavorites>> = [];
+let loadError = false;
+try {
+  items = await getMyFavorites(Astro.request);
+} catch {
+  loadError = true;
+}
+---
+
+<AppLayout title="Favoritos | LOOKHOME">
+  <div class="mx-auto max-w-6xl space-y-7 pb-12">
+    <div>
+      <p class="text-sm font-semibold text-terracotta-strong">Tu cuenta</p>
+      <h1 class="mt-1 text-3xl font-bold text-warm-gray sm:text-4xl">Favoritos</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-warm-gray/75">
+        Tus ofertas guardadas para compararlas y volver a ver sus condiciones.
+      </p>
+    </div>
+
+    {loadError ? (
+      <section role="alert" class="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+        <h2 class="font-bold">No pudimos cargar tus favoritos</h2>
+        <p class="mt-2">Comprueba tu conexión e inténtalo de nuevo.</p>
+        <a href="/favoritos" class="mt-3 inline-flex min-h-11 items-center font-semibold underline">Reintentar</a>
+      </section>
+    ) : <FavoritesGrid client:load items={items} />}
+  </div>
+</AppLayout>

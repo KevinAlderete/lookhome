@@ -1,0 +1,26 @@
+export type HostListingItem = {
+  id: string;
+  draftKey?: string | null;
+  title: string;
+  description?: string | null;
+  status: string;
+  propertyType?: string | null;
+  offerType?: string | null;
+  rentalMode?: "nightly" | "monthly" | null;
+  price?: number | string | null;
+  maxGuests?: number | null;
+  offerCount?: number;
+  isDraftRecord?: boolean;
+  requiresOfferReview?: boolean;
+  missingOffer?: boolean;
+  publicOfferCount?: number;
+  visibilityIssue?: boolean;
+  bookingVisibilityIssue?: boolean;
+  bookingVisibilityReason?: "accepted" | "active" | "disputed" | null;
+  offerNeedsActivation?: boolean;
+  coverUrl?: string | null;
+  city?: string | null;
+  district?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};

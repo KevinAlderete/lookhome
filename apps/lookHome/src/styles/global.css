@@ -1,0 +1,509 @@
+@import "tailwindcss";
+
+@theme {
+  --color-terracotta: #e78b6c;
+  --color-terracotta-strong: #a84f32;
+  --color-soft-coral: #f0a892;
+  --color-warm-gray: #504c4a;
+  --color-cream: #fdf9f3;
+
+  --color-text-primary: #393432;
+  --color-text-secondary: #504c4a;
+  --color-text-muted: #6d6560;
+  --color-canvas: #fdf9f3;
+  --color-surface: #fffefc;
+  --color-surface-muted: #f5efe8;
+  --color-surface-brand: #fae9e2;
+  --color-border-subtle: #e8ded4;
+  --color-border-control: #8c7f77;
+
+  --color-action: #a84f32;
+  --color-action-hover: #93482f;
+  --color-action-active: #77341f;
+  --color-on-action: #ffffff;
+  --color-focus: #a84f32;
+  --color-disabled-bg: #f1ece6;
+  --color-disabled-text: #6d6560;
+
+  --color-success: #256642;
+  --color-success-bg: #edf8f1;
+  --color-success-border: #b7dec5;
+  --color-warning: #765116;
+  --color-warning-bg: #fff7e5;
+  --color-warning-border: #e8cf99;
+  --color-error: #9e332d;
+  --color-error-bg: #fff0ed;
+  --color-error-border: #e9b9b3;
+  --color-info: #31566e;
+  --color-info-bg: #eff5f8;
+  --color-info-border: #c2d5e0;
+
+  --font-sans: "Open Sans Variable", "Open Sans", sans-serif;
+  --font-heading: "Varela Round", "Open Sans Variable", sans-serif;
+  --spacing: 0.25rem;
+
+  --breakpoint-xs: 30rem;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 96rem;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-1:
+    0 1px 2px rgba(48, 43, 41, 0.06),
+    0 1px 1px rgba(48, 43, 41, 0.04);
+  --shadow-2:
+    0 4px 12px rgba(48, 43, 41, 0.08),
+    0 1px 3px rgba(48, 43, 41, 0.04);
+  --shadow-3:
+    0 12px 28px rgba(48, 43, 41, 0.1),
+    0 4px 10px rgba(48, 43, 41, 0.04);
+  --shadow-4:
+    0 24px 48px rgba(48, 43, 41, 0.14),
+    0 8px 18px rgba(48, 43, 41, 0.06);
+}
+
+:root {
+  color-scheme: light;
+
+  --lh-space-0: 0;
+  --lh-space-1: 4px;
+  --lh-space-2: 8px;
+  --lh-space-3: 12px;
+  --lh-space-4: 16px;
+  --lh-space-5: 20px;
+  --lh-space-6: 24px;
+  --lh-space-8: 32px;
+  --lh-space-10: 40px;
+  --lh-space-12: 48px;
+  --lh-space-16: 64px;
+  --lh-space-20: 80px;
+  --lh-space-24: 96px;
+  --lh-space-32: 128px;
+
+  --lh-layout-public-max: 1280px;
+  --lh-layout-app-max: 1600px;
+  --lh-layout-host-sidebar: 264px;
+  --lh-layout-chat-rail: 352px;
+
+  --lh-motion-fast: 120ms;
+  --lh-motion-standard: 160ms;
+  --lh-motion-panel: 220ms;
+  --lh-motion-dialog: 260ms;
+  --lh-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --lh-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@layer base {
+  html {
+    min-height: 100%;
+    scroll-behavior: smooth;
+    background: var(--color-canvas);
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--color-canvas);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-text-primary);
+    font-family: var(--font-heading);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  a,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
+  }
+
+  ::selection {
+    background: var(--color-surface-brand);
+    color: var(--color-text-primary);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.lh-public-shell,
+.lh-app-shell,
+.lh-auth-shell {
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+}
+
+.lh-public-shell :is(h1, h2, h3, h4, h5, h6),
+.lh-app-shell :is(h1, h2, h3, h4, h5, h6),
+.lh-auth-shell :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading);
+  font-weight: 400 !important;
+}
+
+.lh-public-main h1,
+.lh-app-main h1,
+.lh-auth-shell main h1 {
+  font-size: 44px;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 639px) {
+  .lh-public-main h1,
+  .lh-app-main h1,
+  .lh-auth-shell main h1 {
+    font-size: 36px;
+    line-height: 1.22;
+  }
+}
+
+.lh-public-shell :where([class~="bg-white"], [class*="bg-white/"]),
+.lh-app-shell :where([class~="bg-white"], [class*="bg-white/"]),
+.lh-auth-shell :where([class~="bg-white"], [class*="bg-white/"]) {
+  background-color: var(--color-surface) !important;
+}
+
+.lh-public-shell :where([class*="border-warm-gray/"]),
+.lh-app-shell :where([class*="border-warm-gray/"]),
+.lh-auth-shell :where([class*="border-warm-gray/"]) {
+  border-color: var(--color-border-subtle) !important;
+}
+
+.lh-public-shell :where([class*="text-warm-gray/"]),
+.lh-app-shell :where([class*="text-warm-gray/"]),
+.lh-auth-shell :where([class*="text-warm-gray/"]) {
+  color: var(--color-text-muted) !important;
+}
+
+.lh-public-shell :where([class~="text-warm-gray"]),
+.lh-app-shell :where([class~="text-warm-gray"]),
+.lh-auth-shell :where([class~="text-warm-gray"]) {
+  color: var(--color-text-secondary) !important;
+}
+
+.lh-public-shell :where([class~="text-terracotta"]),
+.lh-app-shell :where([class~="text-terracotta"]),
+.lh-auth-shell :where([class~="text-terracotta"]) {
+  color: var(--color-action) !important;
+}
+
+.lh-public-shell :where([class*="text-[10px]"], [class*="text-[11px]"]),
+.lh-app-shell :where([class*="text-[10px]"], [class*="text-[11px]"]),
+.lh-auth-shell :where([class*="text-[10px]"], [class*="text-[11px]"]),
+.lh-search-page :where([class*="text-[10px]"], [class*="text-[11px]"]) {
+  font-size: 12px !important;
+  line-height: 16px;
+}
+
+.lh-public-shell :where([class~="uppercase"]),
+.lh-app-shell :where([class~="uppercase"]),
+.lh-auth-shell :where([class~="uppercase"]),
+.lh-search-page :where([class~="uppercase"]) {
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+.lh-search-page :where([class~="bg-white"], [class*="bg-white/"]) {
+  background-color: var(--color-surface) !important;
+}
+
+.lh-search-page :where([class*="border-warm-gray/"]) {
+  border-color: var(--color-border-subtle) !important;
+}
+
+.lh-search-page :where([class*="text-warm-gray/"]) {
+  color: var(--color-text-muted) !important;
+}
+
+.lh-search-page :where([class~="text-warm-gray"]) {
+  color: var(--color-text-secondary) !important;
+}
+
+.lh-search-page :where([class~="text-terracotta"]) {
+  color: var(--color-action) !important;
+}
+
+.lh-search-page :where([class~="bg-terracotta/10"]) {
+  background-color: var(--color-surface-brand) !important;
+}
+
+.lh-search-page :where([class*="bg-red-"], [class*="bg-rose-"]) {
+  background-color: var(--color-error-bg) !important;
+}
+
+.lh-search-page :where([class*="border-red-"], [class*="border-rose-"]) {
+  border-color: var(--color-error-border) !important;
+}
+
+.lh-search-page :where([class*="text-red-"], [class*="text-rose-"]) {
+  color: var(--color-error) !important;
+}
+
+.lh-search-page :where([class*="bg-amber-"], [class*="bg-yellow-"]) {
+  background-color: var(--color-warning-bg) !important;
+}
+
+.lh-search-page :where([class*="border-amber-"], [class*="border-yellow-"]) {
+  border-color: var(--color-warning-border) !important;
+}
+
+.lh-search-page :where([class*="text-amber-"], [class*="text-yellow-"]) {
+  color: var(--color-warning) !important;
+}
+
+.lh-public-shell :is(input, button, select),
+.lh-app-shell :is(input, button, select),
+.lh-auth-shell :is(input, button, select),
+.lh-search-page :is(input, button, select),
+.host-shell :is(input, button, select) {
+  accent-color: var(--color-action);
+}
+
+.lh-auth-shell label > div:has(> input) {
+  border-color: var(--color-border-control) !important;
+}
+
+.lh-auth-shell label > div:has(> input:focus-visible),
+.lh-auth-shell label > div:focus-within:has(> input) {
+  border-color: var(--color-action) !important;
+  box-shadow: 0 0 0 3px rgba(168, 79, 50, 0.14);
+}
+
+.lh-public-shell :is(a, button)[class~="bg-terracotta"],
+.lh-app-shell :is(a, button)[class~="bg-terracotta"],
+.lh-auth-shell :is(a, button)[class~="bg-terracotta"],
+.lh-public-shell :is(a, button)[class~="bg-terracotta/90"],
+.lh-app-shell :is(a, button)[class~="bg-terracotta/90"],
+.lh-auth-shell :is(a, button)[class~="bg-terracotta/90"],
+.lh-search-page :is(a, button)[class~="bg-terracotta"] {
+  border-color: transparent !important;
+  background: var(--color-action) !important;
+  color: var(--color-on-action) !important;
+  box-shadow: none !important;
+}
+
+.lh-public-shell :is(a, button)[class~="bg-terracotta"]:hover,
+.lh-app-shell :is(a, button)[class~="bg-terracotta"]:hover,
+.lh-auth-shell :is(a, button)[class~="bg-terracotta"]:hover,
+.lh-public-shell :is(a, button)[class~="bg-terracotta/90"]:hover,
+.lh-app-shell :is(a, button)[class~="bg-terracotta/90"]:hover,
+.lh-auth-shell :is(a, button)[class~="bg-terracotta/90"]:hover,
+.lh-search-page :is(a, button)[class~="bg-terracotta"]:hover {
+  background: var(--color-action-hover) !important;
+  color: var(--color-on-action) !important;
+}
+
+.lh-public-shell :is(a, button)[class~="bg-terracotta-strong"]:hover,
+.lh-app-shell :is(a, button)[class~="bg-terracotta-strong"]:hover,
+.lh-auth-shell :is(a, button)[class~="bg-terracotta-strong"]:hover,
+.lh-search-page :is(a, button)[class~="bg-terracotta-strong"]:hover {
+  background: var(--color-action-hover) !important;
+  color: var(--color-on-action) !important;
+}
+
+.lh-public-shell :where([class~="hover:bg-soft-coral"]:hover),
+.lh-app-shell :where([class~="hover:bg-soft-coral"]:hover),
+.lh-auth-shell :where([class~="hover:bg-soft-coral"]:hover),
+.lh-search-page :where([class~="hover:bg-soft-coral"]:hover) {
+  background-color: var(--color-action-hover) !important;
+  color: var(--color-on-action) !important;
+}
+
+.lh-public-shell :where([class~="hover:text-soft-coral"]:hover),
+.lh-app-shell :where([class~="hover:text-soft-coral"]:hover),
+.lh-auth-shell :where([class~="hover:text-soft-coral"]:hover),
+.lh-search-page :where([class~="hover:text-soft-coral"]:hover) {
+  color: var(--color-action-active) !important;
+}
+
+.lh-public-shell :where([class*="hover:border-terracotta"]:hover),
+.lh-app-shell :where([class*="hover:border-terracotta"]:hover),
+.lh-auth-shell :where([class*="hover:border-terracotta"]:hover),
+.lh-search-page :where([class*="hover:border-terracotta"]:hover) {
+  border-color: var(--color-action) !important;
+}
+
+.lh-public-shell :where([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-rose-50"]),
+.lh-app-shell :where([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-rose-50"]),
+.lh-auth-shell :where([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-rose-50"]) {
+  background-color: var(--color-error-bg) !important;
+}
+
+.lh-public-shell :where([class*="border-red-"], [class*="border-rose-"]),
+.lh-app-shell :where([class*="border-red-"], [class*="border-rose-"]),
+.lh-auth-shell :where([class*="border-red-"], [class*="border-rose-"]) {
+  border-color: var(--color-error-border) !important;
+}
+
+.lh-public-shell :where([class*="text-red-"], [class*="text-rose-"]),
+.lh-app-shell :where([class*="text-red-"], [class*="text-rose-"]),
+.lh-auth-shell :where([class*="text-red-"], [class*="text-rose-"]) {
+  color: var(--color-error) !important;
+}
+
+.lh-public-shell :where([class*="bg-green-"], [class*="bg-emerald-"]),
+.lh-app-shell :where([class*="bg-green-"], [class*="bg-emerald-"]),
+.lh-auth-shell :where([class*="bg-green-"], [class*="bg-emerald-"]) {
+  background-color: var(--color-success-bg) !important;
+}
+
+.lh-public-shell :where([class*="border-green-"], [class*="border-emerald-"]),
+.lh-app-shell :where([class*="border-green-"], [class*="border-emerald-"]),
+.lh-auth-shell :where([class*="border-green-"], [class*="border-emerald-"]) {
+  border-color: var(--color-success-border) !important;
+}
+
+.lh-public-shell :where([class*="text-green-"], [class*="text-emerald-"]),
+.lh-app-shell :where([class*="text-green-"], [class*="text-emerald-"]),
+.lh-auth-shell :where([class*="text-green-"], [class*="text-emerald-"]) {
+  color: var(--color-success) !important;
+}
+
+.lh-public-shell :where([class*="bg-amber-"], [class*="bg-yellow-"]),
+.lh-app-shell :where([class*="bg-amber-"], [class*="bg-yellow-"]),
+.lh-auth-shell :where([class*="bg-amber-"], [class*="bg-yellow-"]) {
+  background-color: var(--color-warning-bg) !important;
+}
+
+.lh-public-shell :where([class*="border-amber-"], [class*="border-yellow-"]),
+.lh-app-shell :where([class*="border-amber-"], [class*="border-yellow-"]),
+.lh-auth-shell :where([class*="border-amber-"], [class*="border-yellow-"]) {
+  border-color: var(--color-warning-border) !important;
+}
+
+.lh-public-shell :where([class*="text-amber-"], [class*="text-yellow-"]),
+.lh-app-shell :where([class*="text-amber-"], [class*="text-yellow-"]),
+.lh-auth-shell :where([class*="text-amber-"], [class*="text-yellow-"]) {
+  color: var(--color-warning) !important;
+}
+
+.lh-public-shell :where([class*="shadow-"]),
+.lh-app-shell :where([class*="shadow-"]),
+.lh-auth-shell :where([class*="shadow-"]) {
+  box-shadow: var(--shadow-1) !important;
+}
+
+.lh-public-shell :is(input, textarea)::placeholder,
+.lh-app-shell :is(input, textarea)::placeholder,
+.lh-auth-shell :is(input, textarea)::placeholder,
+.lh-search-page :is(input, textarea)::placeholder {
+  color: var(--color-text-muted) !important;
+  opacity: 1;
+}
+
+.lh-public-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea),
+.lh-app-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea),
+.lh-auth-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea),
+.lh-search-page :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea),
+.host-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea) {
+  border-color: var(--color-border-control);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.lh-public-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea):focus,
+.lh-app-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea):focus,
+.lh-auth-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea):focus,
+.lh-search-page :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea):focus {
+  border-color: var(--color-focus) !important;
+  box-shadow: 0 0 0 3px rgba(168, 79, 50, 0.14);
+}
+
+.lh-public-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select),
+.lh-app-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select),
+.lh-auth-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select),
+.lh-search-page :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select),
+.host-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select) {
+  min-height: 44px;
+}
+
+.listing-card {
+  border-color: var(--color-border-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--color-surface) !important;
+  box-shadow: var(--shadow-1) !important;
+  transition:
+    border-color var(--lh-motion-standard) var(--lh-ease-standard),
+    box-shadow var(--lh-motion-standard) var(--lh-ease-standard);
+}
+
+.listing-card:hover,
+.listing-card:focus-within {
+  border-color: rgba(168, 79, 50, 0.42) !important;
+  box-shadow: var(--shadow-2) !important;
+  transform: none !important;
+}
+
+.listing-card.ring-2 {
+  --tw-ring-color: #a84f32 !important;
+  border-color: #a84f32 !important;
+  box-shadow: var(--shadow-2) !important;
+}
+
+.listing-card img {
+  transition: filter var(--lh-motion-panel) var(--lh-ease-standard);
+}
+
+.listing-card:hover img {
+  filter: saturate(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,79 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import HostListingsTable from "@/components/islands/host/HostListingsTable";
+import HostListingsFilters from "@/components/host/HostListingsFilters.astro";
+import HostPagination from "@/components/host/HostPagination.astro";
+import { getHostListings } from "@/features/host/listings/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const search = Astro.url.searchParams.get("search") ?? "";
+const status = Astro.url.searchParams.get("status") ?? "";
+const offerType = Astro.url.searchParams.get("offerType") ?? "";
+const rentalMode = Astro.url.searchParams.get("rentalMode") ?? "";
+const pageSize = Astro.url.searchParams.get("pageSize") ?? "12";
+const parsedPage = Number(Astro.url.searchParams.get("page") ?? "1");
+const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+const normalizedPageSize = ["12", "24", "48"].includes(pageSize) ? pageSize : "12";
+
+let result = { page: 1, pageSize: Number(normalizedPageSize), total: 0, totalPages: 1, items: [] as Awaited<ReturnType<typeof getHostListings>>["items"] };
+let loadError: string | null = null;
+try {
+  result = await getHostListings(Astro.request, {
+    page,
+    pageSize: Number(normalizedPageSize),
+    search: search || undefined,
+    status: status || undefined,
+    offerType: offerType || undefined,
+    rentalMode: rentalMode || undefined,
+  });
+} catch {
+  loadError = "No se pudieron cargar tus anuncios. Revisa tu conexión e inténtalo de nuevo.";
+}
+
+const queryString = Astro.url.searchParams.toString();
+const hasFilters = Boolean(search || status || offerType || rentalMode);
+---
+
+<HostLayout title="Mis anuncios | LOOKHOME">
+  <div class="space-y-6">
+    <div
+      class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+    >
+      <div>
+        <p class="host-eyebrow">Tu catálogo</p>
+        <h1 class="text-4xl font-black text-warm-gray">Mis anuncios</h1>
+        <p class="mt-2 text-warm-gray/70">
+          Gestiona tus borradores, publicaciones activas, pausadas y archivadas.
+        </p>
+      </div>
+
+      <a
+        href="/host/anuncios/nuevo"
+        class="rounded-2xl bg-terracotta px-5 py-3 font-semibold text-white transition hover:bg-soft-coral"
+      >
+        Nuevo anuncio
+      </a>
+    </div>
+
+    <HostListingsFilters
+      initialValues={{
+        search,
+        status,
+        offerType,
+        rentalMode,
+        pageSize: normalizedPageSize,
+      }}
+    />
+
+    <HostListingsTable client:load rows={result.items} initialError={loadError} hasFilters={hasFilters} />
+
+    <HostPagination
+      page={result.page}
+      totalPages={result.totalPages}
+      basePath="/host/anuncios"
+      queryString={queryString}
+    />
+  </div>
+</HostLayout>

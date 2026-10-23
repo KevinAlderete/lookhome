@@ -1,0 +1,166 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import HostLayout from "@/layouts/HostLayout.astro";
+import MessageInboxContent from "@/components/astro/MessageInboxContent.astro";
+import {
+  getConversationMessages,
+  getMyConversations,
+} from "@/features/messaging/api/server";
+import {
+  contactContextFromSearchParams,
+  conversationPerspectiveFromSearchParams,
+  isMessageContextId,
+} from "@/features/messaging/context";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const currentUser = Astro.locals.user;
+const roles = Array.isArray(currentUser?.roles)
+  ? currentUser.roles.map((role: any) =>
+      typeof role === "string"
+        ? role
+        : (role?.name ?? role?.code ?? role?.slug ?? role?.id),
+    )
+  : [];
+const canHost = roles.some((role: string) =>
+  ["HOST", "ADMIN"].includes(String(role ?? "").toUpperCase()),
+);
+const perspective = conversationPerspectiveFromSearchParams(
+  Astro.url.searchParams,
+  canHost,
+);
+const searchQuery = (Astro.url.searchParams.get("search") ?? "")
+  .trim()
+  .slice(0, 100);
+const unreadOnly = Astro.url.searchParams.get("unreadOnly") === "true";
+
+let conversations: Awaited<ReturnType<typeof getMyConversations>> = {
+  items: [],
+  page: 1,
+  pageSize: 25,
+  hasMore: false,
+};
+let initialLoadError: string | null = null;
+try {
+  conversations = await getMyConversations(Astro.request, {
+    page: 1,
+    pageSize: 25,
+    perspective,
+    search: searchQuery,
+    unreadOnly,
+  });
+} catch (loadError) {
+  initialLoadError =
+    loadError instanceof Error
+      ? loadError.message
+      : "No se pudieron cargar las conversaciones.";
+}
+
+const { context: contactContext, invalid: invalidContactContext } =
+  contactContextFromSearchParams(Astro.url.searchParams);
+const requestedConversationId = Astro.url.searchParams.get("conversationId");
+let conversationUnavailable = false;
+let initialConversationId = contactContext
+  ? null
+  : conversations.items.find((item) => item.id === requestedConversationId)?.id ??
+    conversations.items[0]?.id ??
+    null;
+
+if (
+  !contactContext &&
+  requestedConversationId &&
+  !conversations.items.some((item) => item.id === requestedConversationId)
+) {
+  if (!isMessageContextId(requestedConversationId)) {
+    conversationUnavailable = true;
+    initialConversationId = null;
+  } else {
+    try {
+      // Deep links open any conversation the signed-in user participates in,
+      // independently of the current role, search, or unread filters.
+      const requestedPage = await getMyConversations(Astro.request, {
+        page: 1,
+        pageSize: 1,
+        conversationId: requestedConversationId,
+      });
+      const requestedConversation = requestedPage.items[0];
+      if (requestedConversation) {
+        conversations = {
+          ...conversations,
+          items: [...conversations.items, requestedConversation],
+        };
+        initialConversationId = requestedConversation.id;
+        initialLoadError = null;
+      } else {
+        conversationUnavailable = true;
+        initialConversationId = null;
+      }
+    } catch {
+      conversationUnavailable = true;
+      initialConversationId = null;
+    }
+  }
+}
+
+const openConversationOnMobile = Boolean(
+  !contactContext &&
+    requestedConversationId &&
+    initialConversationId === requestedConversationId &&
+    !conversationUnavailable,
+);
+const currentUserId = currentUser?.id ?? null;
+let messages: Awaited<ReturnType<typeof getConversationMessages>>["items"] = [];
+let initialHasMoreMessages = false;
+let initialMessageCursor: Awaited<
+  ReturnType<typeof getConversationMessages>
+>["nextCursor"] = null;
+let initialMessageSyncedAt: string | null = null;
+let initialMessagesLoaded = false;
+
+if (initialConversationId) {
+  try {
+    const page = await getConversationMessages(
+      Astro.request,
+      initialConversationId,
+      currentUserId,
+    );
+    messages = page.items;
+    initialHasMoreMessages = page.hasMore;
+    initialMessageCursor = page.nextCursor;
+    initialMessageSyncedAt = page.syncedAt;
+    initialMessagesLoaded = true;
+  } catch (loadError) {
+    initialLoadError =
+      loadError instanceof Error
+        ? loadError.message
+        : "No se pudieron cargar los mensajes.";
+  }
+}
+
+const Layout = canHost ? HostLayout : AppLayout;
+---
+
+<Layout title="Mensajes | LOOKHOME">
+  <MessageInboxContent
+    conversations={conversations.items}
+    messages={messages}
+    initialHasMoreMessages={initialHasMoreMessages}
+    initialMessageCursor={initialMessageCursor}
+    initialMessageSyncedAt={initialMessageSyncedAt}
+    initialMessagesLoaded={initialMessagesLoaded}
+    initialConversationId={initialConversationId}
+    openConversationOnMobile={openConversationOnMobile}
+    hostLayout={canHost}
+    initialConversationUnavailable={conversationUnavailable}
+    currentUserId={currentUserId}
+    hasMoreConversations={conversations.hasMore}
+    perspective={perspective}
+    canFilterByRole={canHost}
+    searchQuery={searchQuery}
+    unreadOnly={unreadOnly}
+    contactContext={contactContext}
+    invalidContactContext={invalidContactContext}
+    initialLoadError={initialLoadError}
+  />
+</Layout>

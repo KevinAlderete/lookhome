@@ -1,0 +1,99 @@
+---
+import ListingDetail from "@/components/astro/listing/ListingDetail.astro";
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import {
+  normalizeListing,
+  type PublicListing,
+  type PublicOffer,
+} from "@/features/listings/public";
+import { apiServer } from "@/lib/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+let listing: PublicListing | null = null;
+let offer: PublicOffer | null = null;
+let loadError = false;
+let unavailable = false;
+
+try {
+  const rawRoom = await apiServer<any>(
+    Astro.request,
+    `/rooms/${encodeURIComponent(Astro.params.id ?? "")}`,
+  );
+  const room = rawRoom.room ?? rawRoom;
+  const listingId = room.listing?.id;
+  if (!listingId) {
+    unavailable = true;
+  } else {
+    const rawListing = await apiServer<any>(
+      Astro.request,
+      `/listings/${encodeURIComponent(listingId)}`,
+    );
+    listing = normalizeListing(rawListing.listing ?? rawListing);
+    offer = listing.offers.find((item) => item.id === room.id) ?? null;
+    unavailable = !offer;
+  }
+} catch {
+  loadError = true;
+}
+
+if (listing && offer && !listing.legacyMultipleOffers && listing.offers.length === 1) {
+  return Astro.redirect(`/listings/${encodeURIComponent(listing.id)}${Astro.url.search}`);
+}
+---
+
+<PublicLayout
+  title={offer && listing ? `${offer.name} en ${listing.title} | LOOKHOME` : "Oferta | LOOKHOME"}
+  description={offer?.description ?? listing?.description ?? "Conoce esta oferta de alquiler en LOOKHOME."}
+  socialImage={offer?.photos[0]?.url ?? listing?.photos[0]?.url}
+  noindex={loadError || !offer}
+>
+  {listing && offer ? (
+    <ListingDetail listing={listing} selectedOffer={offer} />
+  ) : (
+    <section
+      class="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6"
+      aria-labelledby="offer-unavailable-title"
+    >
+      <p class="text-sm font-semibold text-terracotta-strong">Oferta de alquiler</p>
+      <h1
+        id="offer-unavailable-title"
+        class="mt-2 text-3xl font-bold text-warm-gray sm:text-4xl"
+      >
+        {loadError ? "No pudimos cargar esta oferta" : "Oferta no disponible"}
+      </h1>
+      <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-warm-gray/75">
+        {loadError
+          ? "Comprueba tu conexión e inténtalo de nuevo."
+          : unavailable
+            ? "Puede haberse pausado o retirado. Busca otros espacios disponibles."
+            : "Busca otros espacios disponibles."}
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3">
+        {listing && (
+          <a
+            href={`/listings/${encodeURIComponent(listing.id)}`}
+            class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/20 bg-white px-5 font-semibold text-warm-gray hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+          >
+            Ver anuncio
+          </a>
+        )}
+        {loadError && (
+          <a
+            href={`/habitaciones/${encodeURIComponent(Astro.params.id ?? "")}`}
+            class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/20 bg-white px-5 font-semibold text-warm-gray hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+          >
+            Reintentar
+          </a>
+        )}
+        <a
+          href="/buscar"
+          class="inline-flex min-h-11 items-center rounded-xl bg-terracotta-strong px-5 font-semibold text-white hover:bg-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+        >
+          Buscar otros espacios
+        </a>
+      </div>
+    </section>
+  )}
+</PublicLayout>

@@ -1,0 +1,224 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import SessionMenu from "@/components/islands/auth/SessionMenu";
+import { getUserAvatar, getUserDisplayName } from "@/lib/auth/user";
+import "../styles/host.css";
+
+interface Props {
+  title?: string;
+}
+
+const navItems = [
+  {
+    href: "/host",
+    label: "Dashboard",
+    iconPaths: [
+      "M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z",
+    ],
+  },
+  {
+    href: "/host/anuncios",
+    label: "Anuncios",
+    iconPaths: [
+      "M3 10.5 12 3l9 7.5",
+      "M5.5 9.5V21h13V9.5",
+      "M9 21v-7h6v7",
+    ],
+  },
+  {
+    href: "/host/reservas",
+    label: "Solicitudes",
+    iconPaths: [
+      "M7 3v3M17 3v3M4 9h16",
+      "M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z",
+      "m8.5 15 2 2 5-5",
+    ],
+  },
+  {
+    href: "/mensajes",
+    label: "Mensajes",
+    iconPaths: [
+      "M21 12a8 8 0 0 1-8 8H6l-4 2 1.5-5A9 9 0 1 1 21 12Z",
+      "M8 12h.01M12 12h.01M16 12h.01",
+    ],
+  },
+  {
+    href: "/notificaciones",
+    label: "Notificaciones",
+    iconPaths: [
+      "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9",
+      "M10 21h4",
+    ],
+  },
+] as const;
+
+const { title = "Panel host | LOOKHOME" } = Astro.props;
+const activePath = Astro.url.pathname;
+const user = Astro.locals.user;
+const displayName = getUserDisplayName(user);
+const avatarUrl = getUserAvatar(user);
+const roles = Array.isArray(user?.roles)
+  ? user.roles.map((role: any) =>
+      typeof role === "string"
+        ? role
+        : (role?.name ?? role?.code ?? role?.slug ?? role?.id),
+    )
+  : [];
+
+const sectionTitle = activePath.startsWith("/host/anuncios/nuevo")
+  ? "Nuevo anuncio"
+  : activePath.includes("/precios")
+    ? "Precio y condiciones"
+    : activePath.includes("/fotos")
+      ? "Fotos del anuncio"
+      : activePath.includes("/disponibilidad")
+        ? "Disponibilidad"
+        : activePath.startsWith("/host/anuncios")
+          ? "Anuncios"
+          : activePath.startsWith("/host/reservas")
+            ? "Solicitudes de alquiler"
+             : activePath === "/mensajes" || activePath.startsWith("/host/mensajes")
+               ? "Mensajes"
+              : "Dashboard";
+
+const isActive = (href: string) =>
+  href === "/host"
+    ? activePath === href
+    : activePath === href || activePath.startsWith(`${href}/`);
+---
+
+<BaseLayout title={title} noindex={true} bodyClass="host-body">
+  <a
+    href="#host-main"
+    class="sr-only z-50 rounded-xl bg-white px-4 py-3 font-semibold text-warm-gray shadow-lg focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-2 focus:outline-offset-2 focus:outline-terracotta-strong"
+  >
+    Saltar al contenido principal
+  </a>
+  <div class="host-shell">
+    <aside class="host-sidebar" aria-label="Navegación del anfitrión">
+      <a href="/host" class="host-logo" aria-label="LOOKHOME, panel host">
+        <img src="/Logo.png" alt="LOOKHOME" />
+        <span>Espacio anfitrión</span>
+      </a>
+
+      <nav class="host-sidebar-nav">
+        <p class="host-nav-label">Gestión</p>
+        {
+          navItems.map((item) => (
+            <a
+              href={item.href}
+              class:list={["host-nav-link", { active: isActive(item.href) }]}
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                {item.iconPaths.map((path) => (
+                  <path d={path} />
+                ))}
+              </svg>
+              <span>{item.label}</span>
+            </a>
+          ))
+        }
+      </nav>
+
+      <div class="host-sidebar-footer">
+        <a href="/host/anuncios/nuevo" class="host-new-listing">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nuevo anuncio
+        </a>
+
+        {
+          user && (
+            <a href="/perfil" class="host-profile-card">
+              <img src={avatarUrl} alt={`Avatar de ${displayName}`} />
+              <span>
+                <strong>{displayName}</strong>
+                <small>Ver perfil</small>
+              </span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </a>
+          )
+        }
+      </div>
+    </aside>
+
+    <div class="host-workspace">
+      <header class="host-mobile-header">
+        <div class="host-mobile-bar">
+          <a href="/host" class="host-mobile-logo" aria-label="LOOKHOME, panel host">
+            <img src="/Logo.png" alt="LOOKHOME" />
+          </a>
+          {
+            user && (
+              <div class="host-session">
+                <SessionMenu
+                  client:load
+                  displayName={displayName}
+                  avatarUrl={avatarUrl}
+                  roles={roles}
+                />
+              </div>
+            )
+          }
+        </div>
+        <nav class="host-mobile-nav" aria-label="Navegación del anfitrión">
+          {
+            navItems.map((item) => (
+              <a
+                href={item.href}
+                class:list={["host-mobile-link", { active: isActive(item.href) }]}
+                aria-current={isActive(item.href) ? "page" : undefined}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  {item.iconPaths.map((path) => (
+                    <path d={path} />
+                  ))}
+                </svg>
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+      </header>
+
+      <header class="host-topbar">
+        <div>
+          <span>Panel de anfitrión</span>
+          <h2>{sectionTitle}</h2>
+        </div>
+        <div class="host-topbar-actions">
+          <a href="/host/anuncios/nuevo" class="host-topbar-cta">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            Nuevo anuncio
+          </a>
+          {
+            user && (
+              <div class="host-session">
+                <SessionMenu
+                  client:load
+                  displayName={displayName}
+                  avatarUrl={avatarUrl}
+                  roles={roles}
+                />
+              </div>
+            )
+          }
+        </div>
+      </header>
+
+      <main id="host-main" tabindex="-1" class="host-content">
+        <slot />
+      </main>
+    </div>
+  </div>
+</BaseLayout>

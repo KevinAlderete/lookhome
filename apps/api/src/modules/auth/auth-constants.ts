@@ -1,0 +1,1 @@
+export const CURRENT_SESSION_TOKEN_VERSION = 2;

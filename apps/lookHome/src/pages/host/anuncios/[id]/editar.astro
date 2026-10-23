@@ -1,0 +1,84 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import HostListingCreateForm from "@/components/islands/host/HostListingCreateForm";
+import HostListingStatusActions from "@/components/islands/host/HostListingStatusActions";
+import { getHostListingById } from "@/features/host/listings/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const { id } = Astro.params;
+const listing = await getHostListingById(Astro.request, id!);
+const statusLabels: Record<string, string> = {
+  draft: "Borrador",
+  pending_review: "En revisión",
+  published: "Publicado",
+  paused: "Pausado",
+  suspended: "Suspendido",
+  archived: "Archivado",
+};
+const protectedState = ["pending_review", "suspended", "archived"].includes(listing.listingStatus);
+const editableSections = !protectedState && !listing.requiresOfferReview;
+const bookingVisibilityLabel = listing.bookingVisibilityReason === "active"
+  ? "estancia en curso"
+  : listing.bookingVisibilityReason === "disputed"
+    ? "solicitud en revisión"
+    : "solicitud aprobada";
+const statusLabel = listing.bookingVisibilityIssue
+  ? "Oculto temporalmente"
+  : listing.visibilityIssue && listing.missingOffer
+  ? "Sin oferta pública"
+  : listing.visibilityIssue && listing.offerNeedsActivation
+    ? "Oferta no visible"
+    : listing.visibilityIssue
+      ? "Oferta pausada"
+      : (statusLabels[listing.listingStatus] ?? "Estado del anuncio");
+---
+
+<HostLayout title="Editar anuncio | LOOKHOME">
+  <div class="space-y-7">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div class="min-w-0">
+        <p class="host-eyebrow">Administración del anuncio</p>
+        <h1 class="break-words text-4xl font-black text-warm-gray [overflow-wrap:anywhere]">{listing.title || "Anuncio sin título"}</h1>
+        <p class="mt-2 max-w-3xl text-warm-gray/70">Edita una oferta desde su anuncio. La moneda y el período del precio se mantienen ligados a la modalidad elegida.</p>
+        <span class="mt-4 inline-flex rounded-full border border-warm-gray/20 bg-white px-3 py-1 text-sm font-semibold text-warm-gray">{statusLabel}</span>
+        {listing.bookingVisibilityIssue && <p role="status" class="mt-2 max-w-2xl text-sm leading-6 text-warm-gray/70">El anuncio no aparece en búsquedas por una {bookingVisibilityLabel}. Volverá a mostrarse cuando esa solicitud deje de bloquearlo, si el anuncio y su oferta siguen publicados.</p>}
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {editableSections && <a href={`/host/anuncios/${encodeURIComponent(id!)}/fotos`} class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/15 bg-white px-4 font-semibold text-warm-gray">Fotos</a>}
+        {editableSections && listing.offerCount === 1 && <a href={`/host/anuncios/${encodeURIComponent(id!)}/disponibilidad`} class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/15 bg-white px-4 font-semibold text-warm-gray">Disponibilidad</a>}
+        {listing.listingStatus === "published" && !listing.visibilityIssue && !listing.bookingVisibilityIssue && <a href={`/listings/${encodeURIComponent(id!)}`} class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/15 bg-white px-4 font-semibold text-warm-gray hover:bg-cream">Vista pública</a>}
+        {editableSections && listing.offerCount === 1 && <HostListingStatusActions client:load listingId={id!} status={listing.listingStatus} visibilityIssue={listing.visibilityIssue} bookingVisibilityIssue={listing.bookingVisibilityIssue} offerNeedsActivation={listing.offerNeedsActivation} />}
+      </div>
+    </header>
+
+    {listing.requiresOfferReview ? (
+      <section class="rounded-3xl border border-amber-300 bg-amber-50 p-6" role="status">
+        <h2 class="text-xl font-bold text-warm-gray">Anuncio anterior con varias ofertas</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-warm-gray">Se conservaron sus {listing.offerCount} ofertas, precios, fotos y referencias históricas. Como pueden tener modalidades y condiciones distintas, no se combinaron ni se eligió una automáticamente. Este anuncio queda protegido de cambios de oferta hasta una revisión específica.</p>
+      </section>
+    ) : protectedState ? (
+      <section class="rounded-3xl border border-amber-300 bg-amber-50 p-6" role="status">
+        <h2 class="text-xl font-bold text-warm-gray">{statusLabels[listing.listingStatus]}</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-warm-gray">
+          {listing.listingStatus === "pending_review" ? "El anuncio está esperando revisión. No se mostrará como publicado hasta que el estado cambie." : listing.listingStatus === "suspended" ? "El anuncio está suspendido y solo puede gestionarlo moderación." : "El anuncio está archivado y no admite cambios desde esta vista."}
+        </p>
+      </section>
+    ) : (
+      <>
+        <nav aria-label="Secciones del anuncio" class="grid gap-3 sm:grid-cols-2">
+          <a href="#datos" class="rounded-2xl border border-warm-gray/12 bg-white p-4 font-semibold text-warm-gray">Información, ubicación, precio y condiciones</a>
+          <a href={`/host/anuncios/${encodeURIComponent(id!)}/fotos`} class="rounded-2xl border border-warm-gray/12 bg-white p-4 font-semibold text-warm-gray">Fotos, orden y portada</a>
+          <a href={`/host/anuncios/${encodeURIComponent(id!)}/disponibilidad`} class="rounded-2xl border border-warm-gray/12 bg-white p-4 font-semibold text-warm-gray">Disponibilidad y bloqueos</a>
+          {listing.listingStatus === "published" && !listing.visibilityIssue && !listing.bookingVisibilityIssue && <a href={`/listings/${encodeURIComponent(id!)}`} class="rounded-2xl border border-warm-gray/12 bg-white p-4 font-semibold text-warm-gray">Vista pública del anuncio</a>}
+          {listing.listingStatus !== "published" && <a href={`/host/anuncios/${encodeURIComponent(id!)}/vista-previa`} class="rounded-2xl border border-warm-gray/12 bg-white p-4 font-semibold text-warm-gray">Vista previa</a>}
+        </nav>
+        <section id="datos" aria-labelledby="offer-edit-title" class="scroll-mt-32">
+          <h2 id="offer-edit-title" class="sr-only">Editar información de la oferta</h2>
+          <HostListingCreateForm client:load hostUserId={Astro.locals.user?.id ?? ""} listing={listing} />
+        </section>
+      </>
+    )}
+  </div>
+</HostLayout>

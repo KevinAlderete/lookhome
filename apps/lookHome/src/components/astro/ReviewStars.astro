@@ -1,0 +1,50 @@
+---
+interface Props {
+  rating: number;
+  label: string;
+  id: string;
+  size?: "sm" | "md";
+}
+
+const { rating, label, id, size = "sm" } = Astro.props;
+const normalizedRating = Math.max(0, Math.min(5, Number(rating) || 0));
+const iconClass = size === "md" ? "size-5" : "size-4";
+const starPath = "m12 2.5 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9L12 2.5Z";
+---
+
+<span role="img" aria-label={label} class="inline-flex items-center gap-0.5 text-terracotta-strong">
+  {
+    Array.from({ length: 5 }, (_, index) => {
+      const fill = Math.max(0, Math.min(1, normalizedRating - index));
+      const clipId = `${id}-star-${index}`;
+      return (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          class={iconClass}
+          fill="none"
+        >
+          <defs>
+            <clipPath id={clipId}>
+              <rect x="0" y="0" width={24 * fill} height="24" />
+            </clipPath>
+          </defs>
+          <path
+            d={starPath}
+            fill="none"
+            stroke="currentColor"
+            stroke-linejoin="round"
+            stroke-width="1.6"
+          />
+          {fill > 0 && (
+            <path
+              d={starPath}
+              fill="currentColor"
+              clip-path={fill < 1 ? `url(#${clipId})` : undefined}
+            />
+          )}
+        </svg>
+      );
+    })
+  }
+</span>

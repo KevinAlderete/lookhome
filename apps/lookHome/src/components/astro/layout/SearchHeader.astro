@@ -1,0 +1,119 @@
+---
+import SessionMenu from "@/components/islands/auth/SessionMenu";
+import { getUserAvatar, getUserDisplayName } from "@/lib/auth/user";
+
+const user = Astro.locals.user;
+const displayName = getUserDisplayName(user);
+const avatarUrl = getUserAvatar(user);
+const getRoleName = (role: unknown) => {
+  if (typeof role === "string") return role;
+  if (!role || typeof role !== "object") return "";
+  const value = role as Record<string, unknown>;
+  return String(value.name ?? value.code ?? value.slug ?? value.id ?? "");
+};
+const roles = Array.isArray(user?.roles)
+  ? user.roles.map(getRoleName).filter(Boolean)
+  : [];
+---
+
+<header class="search-header select-none" aria-label="Cabecera principal">
+  <div
+    class="search-header-bar flex items-center justify-between gap-3 border border-warm-gray/10 bg-white/95 px-3 shadow-[0_12px_40px_rgba(80,76,74,0.12)] backdrop-blur-md md:px-4"
+  >
+    <a
+      href="/"
+      class="flex shrink-0 cursor-pointer items-center rounded-lg transition duration-300 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-terracotta"
+      aria-label="LOOKHOME, ir al inicio"
+    >
+      <img src="/Logo.png" alt="LOOKHOME" width="512" height="143" class="h-auto w-24 sm:w-32" />
+    </a>
+
+    <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+      {
+        user ? (
+          <SessionMenu
+            client:load
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            roles={roles}
+          />
+        ) : (
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <a href="/login" class="btn-ghost">
+              <span class="sm:hidden">Entrar</span><span class="hidden sm:inline">Iniciar sesión</span>
+            </a>
+            <a href="/registro" class="btn-primary">
+              <span class="sm:hidden">Registro</span><span class="hidden sm:inline">Crear cuenta</span>
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </div>
+</header>
+
+<style>
+  .search-header {
+    position: fixed;
+    z-index: 40;
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .search-header-bar {
+    height: 3.75rem;
+    border-color: #e8ded4;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(48, 43, 41, 0.08);
+  }
+
+  @media (max-width: 639px) {
+    .search-header-bar {
+      height: 3.5rem;
+      padding-bottom: 0.35rem;
+      padding-top: 0.35rem;
+    }
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--color-action);
+    color: #ffffff;
+    font-weight: 600;
+    transition: background-color var(--lh-motion-standard) var(--lh-ease-standard);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-action-hover);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid #8c7f77;
+    background: #fffefc;
+    color: #504c4a;
+    font-weight: 600;
+    transition:
+      background-color var(--lh-motion-standard) var(--lh-ease-standard),
+      border-color var(--lh-motion-standard) var(--lh-ease-standard);
+    cursor: pointer;
+  }
+
+  .btn-ghost:hover {
+    border-color: #a84f32;
+    background: #f5efe8;
+  }
+
+</style>

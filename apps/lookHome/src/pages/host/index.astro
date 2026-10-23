@@ -1,0 +1,101 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import HostDashboard from "@/components/islands/dashboards/HostDashboard";
+import { getHostBookings, summarizeBookings } from "@/features/bookings/api/server";
+import { getMyConversations } from "@/features/messaging/api/server";
+
+export const prerender = false;
+
+Astro.response.headers.set("Cache-Control", "private, no-store");
+let bookings: Awaited<ReturnType<typeof getHostBookings>> = [];
+let bookingError = false;
+try {
+  bookings = await getHostBookings(Astro.request, Astro.cookies.get("lh_access_token")?.value);
+} catch {
+  bookingError = true;
+}
+const bookingSummary = summarizeBookings(bookings);
+let conversations: Awaited<ReturnType<typeof getMyConversations>> = {
+  items: [],
+  page: 1,
+  pageSize: 5,
+  hasMore: false,
+};
+let conversationError: string | null = null;
+try {
+  conversations = await getMyConversations(Astro.request, {
+    page: 1,
+    pageSize: 5,
+    perspective: "host",
+  });
+} catch (error) {
+  conversationError =
+    error instanceof Error
+      ? error.message
+      : "No se pudieron cargar las conversaciones.";
+}
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const upcomingBookings = bookings
+  .filter((booking) => {
+    const status = booking.status.toLowerCase();
+    const startsAt = booking.startsAt ? new Date(booking.startsAt).getTime() : NaN;
+    return (
+      Number.isFinite(startsAt) &&
+      startsAt >= today.getTime() &&
+      !["cancelled", "canceled", "rejected", "refunded"].some((value) =>
+        status.includes(value),
+      )
+    );
+  })
+  .sort(
+    (a, b) =>
+      new Date(a.startsAt!).getTime() - new Date(b.startsAt!).getTime(),
+  );
+const dashboardBookings = upcomingBookings.length
+  ? upcomingBookings.slice(0, 5)
+  : bookings.slice(0, 5);
+
+const stats = [
+  { label: "Solicitudes totales", value: String(bookingSummary.total) },
+  { label: "Aprobadas y en curso", value: String(bookingSummary.approved) },
+  { label: "Pendientes", value: String(bookingSummary.pending) },
+  {
+    label: "Estancias finalizadas",
+    value: String(bookingSummary.completed),
+  },
+];
+if (bookingError) {
+  stats.forEach((stat) => { stat.value = "—"; });
+}
+---
+
+<HostLayout title="Panel host | LOOKHOME">
+  <HostDashboard
+    client:load
+    stats={stats}
+    bookingError={bookingError ? "No pudimos cargar tus solicitudes. Vuelve a intentarlo." : null}
+    bookingSectionTitle={upcomingBookings.length ? "Próximas estancias" : "Solicitudes recientes"}
+    recentBookings={dashboardBookings.map((item) => ({
+      id: item.id,
+      guestName: item.guestName,
+      propertyTitle: item.propertyTitle,
+      checkIn: item.checkIn,
+      checkOut: item.checkOut,
+      estimatedAmount: item.estimatedAmount,
+      rentalMode: item.rentalMode,
+      durationLabel: item.durationLabel,
+      status: item.status,
+    }))}
+    recentMessages={conversations.items.slice(0, 5).map((item) => ({
+      id: item.id,
+      participantName: item.participantName,
+      contextTitle: item.contextTitle,
+      preview: item.lastMessage,
+      lastMessageAt: item.lastMessageAt,
+      unreadCount: item.unreadCount,
+    }))}
+    messageError={conversationError}
+  />
+</HostLayout>

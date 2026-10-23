@@ -1,0 +1,248 @@
+---
+import SearchLayout from "@/layouts/SearchLayout.astro";
+import SearchHeader from "@/components/astro/layout/SearchHeader.astro";
+import SearchResultsPanel from "@/sections/SearchResultsPanel.astro";
+import SearchMap from "@/components/islands/search/SearchMap";
+import SearchControlsBar from "@/components/islands/search/SearchControlsBar";
+import {
+  getLocationSelection,
+  getSearchResults,
+} from "@/features/search/api/server";
+import { locationLookupFromParams } from "@/features/search/url-state";
+import { parseSearchFilters } from "@/features/search/search-params";
+import type { LocationSuggestion, SearchResults } from "@/features/search/types";
+
+export const prerender = false;
+
+const center: [number, number] = [-77.0428, -12.0464];
+const zoom = 12;
+const searchParams = Astro.url.searchParams;
+const filters = parseSearchFilters(searchParams);
+
+const locationLookup = locationLookupFromParams(searchParams);
+const locationType = locationLookup?.type;
+const locationId = locationLookup?.id;
+if (locationLookup) {
+  filters.locationType = locationLookup.type;
+  filters.locationId = locationLookup.id;
+}
+let initialLocationSelection: LocationSuggestion | null = null;
+if (locationType && locationId) {
+  try {
+    initialLocationSelection = await getLocationSelection(
+      Astro.request,
+      locationType,
+      locationId,
+    );
+    if (initialLocationSelection) {
+      const requested = {
+        countryCode: filters.countryCode,
+        regionId: filters.regionId,
+        cityId: filters.cityId,
+        districtId: filters.districtId,
+      };
+      const resolved = {
+        countryCode: initialLocationSelection.filters.countryCode,
+        regionId: initialLocationSelection.filters.regionId ?? "",
+        cityId: initialLocationSelection.filters.cityId ?? "",
+        districtId: initialLocationSelection.filters.districtId ?? "",
+      };
+      const conflicts = Object.entries(requested).some(
+        ([name, value]) =>
+          Boolean(value) &&
+          value !== resolved[name as keyof typeof resolved],
+      );
+      if (!conflicts) {
+        filters.countryCode = resolved.countryCode;
+        filters.regionId = resolved.regionId;
+        filters.cityId = resolved.cityId;
+        filters.districtId = resolved.districtId;
+      }
+    }
+  } catch {
+    initialLocationSelection = null;
+  }
+}
+
+let results: SearchResults = {
+  items: [],
+  total: 0,
+  page: Number(filters.page) || 1,
+  pageSize: Number(filters.pageSize) || 12,
+  queryId: filters.queryId,
+};
+let hasSearchError = false;
+
+try {
+  results = await getSearchResults(Astro.request, filters);
+} catch (error) {
+  hasSearchError = true;
+  console.error("Search results could not be loaded", error);
+}
+
+const totalPages = Math.max(1, Math.ceil(results.total / results.pageSize));
+if (!hasSearchError && results.total > 0 && results.page > totalPages) {
+  const canonicalParams = new URLSearchParams(searchParams);
+  canonicalParams.set("page", String(totalPages));
+  canonicalParams.delete("queryId");
+  return Astro.redirect(`/buscar?${canonicalParams.toString()}`);
+}
+
+const effectiveParams = new URLSearchParams(searchParams);
+effectiveParams.delete("showSchools");
+effectiveParams.delete("showTransit");
+if (results.queryId) effectiveParams.set("queryId", results.queryId);
+
+const queryString = effectiveParams.toString();
+const locationLabel =
+  initialLocationSelection?.label || filters.q?.trim() || "Todas las zonas";
+const requestedBounds = [filters.south, filters.west, filters.north, filters.east].map(
+  (value) => (value ? Number(value) : Number.NaN),
+);
+const initialBounds =
+  requestedBounds.every(Number.isFinite) &&
+  requestedBounds[0] < requestedBounds[2] &&
+  requestedBounds[1] < requestedBounds[3]
+    ? {
+        south: requestedBounds[0],
+        west: requestedBounds[1],
+        north: requestedBounds[2],
+        east: requestedBounds[3],
+      }
+    : undefined;
+const isAuthenticated = Boolean(Astro.locals.user);
+const visiblePrices = results.items
+  .filter((item) => item.currencyCode === "PEN")
+  .map((item) => Number(item.price))
+  .filter((price) => Number.isFinite(price) && price > 0);
+const priceFormatter = new Intl.NumberFormat("es-PE", {
+  maximumFractionDigits: 2,
+});
+const priceSummary = filters.rentalMode
+  ? visiblePrices.length
+    ? `S/ ${priceFormatter.format(Math.min(...visiblePrices))} – S/ ${priceFormatter.format(Math.max(...visiblePrices))} por ${filters.rentalMode === "monthly" ? "mes" : "día"} · PEN`
+    : "Sin precios publicados para esta modalidad"
+  : null;
+const hasUnscopedPriceFilter =
+  Boolean(filters.minPrice || filters.maxPrice) && !filters.rentalMode;
+---
+
+<SearchLayout
+  title="Buscar propiedades | LOOKHOME"
+  description="Explora propiedades y habitaciones en LOOKHOME."
+  noindex
+>
+  <a href="#search-results" class="skip-link">Saltar a los resultados</a>
+
+  <div class="immersive-search" data-sheet-state="compact">
+    <div class="map-canvas" aria-hidden="false">
+      <SearchMap
+        client:load
+        className="search-map"
+        center={center}
+        zoom={zoom}
+        items={results.items}
+        searchFilters={filters}
+        initialBounds={initialBounds}
+      />
+    </div>
+
+    <SearchHeader />
+    <SearchControlsBar
+      client:load
+      initialValues={filters}
+      preservedQuery={queryString}
+      initialLocationSelection={initialLocationSelection}
+    />
+
+    <main id="main-content">
+      <h1 class="sr-only">Buscar anuncios de alquiler</h1>
+      <section
+        id="search-results"
+        class="results-overlay"
+        role="region"
+        aria-label="Resultados de búsqueda"
+      >
+        <button
+          type="button"
+          class="sheet-toggle"
+          aria-controls="results-scroll"
+          aria-expanded="false"
+          data-sheet-toggle
+        >
+          <span class="sheet-handle" aria-hidden="true"></span>
+          <span>{results.total} {results.total === 1 ? "resultado" : "resultados"}</span>
+          <span class="sheet-toggle-action" data-sheet-label>Ver más</span>
+        </button>
+        <div id="results-scroll" class="results-scroll">
+          {hasUnscopedPriceFilter && (
+            <p class="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-900" role="status">
+              Este enlace incluye un rango de precio sin modalidad. No se aplicó para evitar comparar alquileres por día con alquileres por mes. Elige una modalidad y vuelve a aplicar el filtro.
+            </p>
+          )}
+          <SearchResultsPanel
+            items={results.items}
+            total={results.total}
+            page={results.page}
+            pageSize={results.pageSize}
+            queryString={queryString}
+            locationLabel={locationLabel}
+            priceSummary={priceSummary}
+            isAuthenticated={isAuthenticated}
+            hasError={hasSearchError}
+          />
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="search-navigation-status" class="navigation-status" role="status" aria-live="polite" hidden>
+    Actualizando resultados...
+  </div>
+</SearchLayout>
+
+<script>
+  import { buildAreaSearchUrl } from "@/features/search/url-state";
+  import { dispatchSearchUiEvent } from "@/features/search/events";
+
+  const shell = document.querySelector<HTMLElement>(".immersive-search");
+  const sheetToggle = document.querySelector<HTMLButtonElement>("[data-sheet-toggle]");
+  const sheetLabel = document.querySelector<HTMLElement>("[data-sheet-label]");
+
+  sheetToggle?.addEventListener("click", () => {
+    if (!shell) return;
+    const expanded = shell.dataset.sheetState !== "expanded";
+    shell.dataset.sheetState = expanded ? "expanded" : "compact";
+    sheetToggle.setAttribute("aria-expanded", String(expanded));
+    if (sheetLabel) sheetLabel.textContent = expanded ? "Ver mapa" : "Ver más";
+    dispatchSearchUiEvent("lookhome:sheet-change", { expanded });
+  });
+
+  window.addEventListener("lookhome:search-area", (event) => {
+    const bounds = event.detail;
+    if (
+      !bounds ||
+      ![bounds.south, bounds.west, bounds.north, bounds.east].every(
+        Number.isFinite,
+      ) ||
+      bounds.south >= bounds.north ||
+      bounds.west >= bounds.east
+    ) {
+      return;
+    }
+
+    const nextUrl = buildAreaSearchUrl(window.location.href, bounds);
+    if (!nextUrl) return;
+    showNavigationStatus();
+    window.location.assign(nextUrl);
+  });
+
+  const navigationStatus = document.querySelector<HTMLElement>("#search-navigation-status");
+  const showNavigationStatus = () => {
+    if (navigationStatus) navigationStatus.hidden = false;
+  };
+  document.addEventListener("submit", showNavigationStatus);
+  document.querySelectorAll<HTMLElement>("[data-search-navigation]").forEach((link) => {
+    link.addEventListener("click", showNavigationStatus);
+  });
+</script>

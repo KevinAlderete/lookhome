@@ -1,0 +1,81 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import RegisterForm from "@/components/islands/auth/RegisterForm";
+
+import { safeInternalRedirect } from "@/lib/auth/redirect";
+
+const redirectTo = safeInternalRedirect(Astro.url.searchParams.get("redirect"));
+const loginHref =
+  redirectTo !== "/"
+    ? `/login?redirect=${encodeURIComponent(redirectTo)}`
+    : "/login";
+---
+
+<AuthLayout
+  title="Crear cuenta | LOOKHOME"
+  description="Crea tu cuenta en LOOKHOME."
+>
+  <header
+    class="border-b border-warm-gray/10 bg-white/90 px-4 py-4 lg:px-10"
+  >
+      <div class="mx-auto flex max-w-[1280px] items-center justify-between gap-6">
+       <a href="/" class="flex min-h-11 items-center gap-3">
+        <img src="/Logo.png" alt="LOOKHOME" class="h-10 w-auto" />
+      </a>
+
+      <nav
+        class="hidden items-center gap-6 text-sm font-semibold text-warm-gray/80 lg:flex"
+      >
+         <a href="/" class="inline-flex min-h-11 items-center transition hover:text-warm-gray">Inicio</a>
+         <a href="/buscar" class="inline-flex min-h-11 items-center transition hover:text-warm-gray">Propiedades</a
+        >
+        <div class="flex items-center gap-3">
+          <span class="text-warm-gray/70">¿Ya tienes cuenta?</span>
+          <a
+            href={loginHref}
+            class="inline-flex min-h-11 items-center rounded-xl bg-terracotta-strong px-4 py-2 font-semibold text-white transition hover:bg-warm-gray"
+          >
+            Inicia sesión
+          </a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main
+        class="grid min-h-[calc(100vh-160px)] bg-cream lg:grid-cols-[1fr_1.05fr]"
+  >
+    <section class="relative flex items-center justify-center px-6 py-12">
+      <RegisterForm
+        client:only="react"
+        redirectTo={redirectTo}
+      />
+    </section>
+
+    <section class="relative hidden overflow-hidden lg:block">
+      <img
+        src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1800&q=80"
+        alt="Interior de una vivienda moderna"
+        class="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+      />
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-[#302b29]/10 via-[#302b29]/45 to-[#302b29]/65"
+      >
+      </div>
+
+      <div class="relative z-10 flex h-full flex-col justify-end px-12 py-14">
+        <div class="max-w-xl space-y-5">
+          <p class="text-sm font-semibold text-white/85">Lookhome</p>
+          <h1 class="text-4xl font-normal leading-tight text-white sm:text-5xl">
+            Publica, guarda, reserva y gestiona desde un solo lugar.
+          </h1>
+          <p class="max-w-lg text-base leading-7 text-white/90 sm:text-lg sm:leading-8">
+            Crea tu cuenta para empezar a explorar propiedades o convertirte en
+            anfitrión.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+</AuthLayout>

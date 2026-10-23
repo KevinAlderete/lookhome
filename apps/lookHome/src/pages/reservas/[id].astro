@@ -1,0 +1,289 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import BookingReviewForm from "@/components/islands/bookings/BookingReviewForm";
+import TenantBookingStartForm from "@/components/islands/bookings/TenantBookingStartForm";
+import { formatBookingAmount, getMyBookingById } from "@/features/bookings/api/server";
+import { bookingDateOnly, getPeruDateOnly } from "@/features/bookings/date";
+import { bookingStatusMeta } from "@/features/bookings/status";
+import { getMyBookingReviewStatus } from "@/features/reviews/api/server";
+import type { BookingReviewStatus } from "@/features/reviews/types";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const { id } = Astro.params;
+const accessToken = Astro.cookies.get("lh_access_token")?.value;
+let booking: any = null;
+let loadError = false;
+try {
+  booking = await getMyBookingById(Astro.request, id!, accessToken);
+} catch {
+  loadError = true;
+}
+let reviewStatus: BookingReviewStatus | null = null;
+let reviewStatusError = false;
+if (
+  booking &&
+  ["active", "completed", "disputed"].includes(String(booking.status))
+) {
+  try {
+    reviewStatus = await getMyBookingReviewStatus(
+      Astro.request,
+      booking.id,
+      accessToken,
+    );
+  } catch {
+    reviewStatusError = true;
+  }
+}
+const status = bookingStatusMeta(String(booking?.status ?? ""));
+const bookingStatus = String(booking?.status ?? "").trim().toLowerCase();
+const bookingStartDate = bookingDateOnly(booking?.startDate);
+const bookingEndDate = bookingDateOnly(booking?.endDate);
+const todayInPeru = getPeruDateOnly();
+const canConfirmStart =
+  bookingStatus === "accepted" &&
+  bookingStartDate != null &&
+  bookingEndDate != null &&
+  bookingStartDate <= todayInPeru &&
+  todayInPeru <= bookingEndDate;
+const startWindowExpired =
+  bookingStatus === "accepted" &&
+  bookingEndDate != null &&
+  bookingEndDate < todayInPeru;
+const rentalMode = booking?.rentalMode ?? booking?.pricingSnapshot?.rentalMode;
+const monthly = rentalMode === "monthly";
+const duration = booking?.pricingSnapshot?.billingQuantity ?? booking?.termMonths;
+const hostName =
+  booking?.host?.profile?.displayName ||
+  "Anfitrión";
+const currency = booking?.pricingSnapshot?.currencyCode;
+const amount = (value: unknown) => formatBookingAmount(value, currency);
+const formatDate = (value: unknown) => {
+  if (!value) return "—";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("es-PE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+const statusDescriptions: Record<string, string> = {
+  requested: "El anfitrión debe revisar tu solicitud. Todavía no hay una reserva confirmada.",
+  pending: "El anfitrión debe revisar tu solicitud. Todavía no hay una reserva confirmada.",
+  accepted: "El anfitrión aprobó tu solicitud. Podrás confirmar el inicio desde la fecha de ingreso indicada. El pago se coordina directamente con él.",
+  confirmed: "El anfitrión aprobó tu solicitud. Podrás confirmar el inicio desde la fecha de ingreso indicada. El pago se coordina directamente con él.",
+  rejected: "El anfitrión rechazó esta solicitud. Puedes buscar otra oferta disponible.",
+  cancelled: "Esta solicitud fue cancelada y ya no está vigente.",
+  canceled: "Esta solicitud fue cancelada y ya no está vigente.",
+  active: "La estancia está en curso. Si necesitas coordinar algo, puedes escribirle al anfitrión.",
+  completed: "Esta estancia figura como completada.",
+  disputed: "Esta solicitud está en revisión.",
+};
+const statusDescription = statusDescriptions[bookingStatus] ?? "Consulta aquí el estado y las condiciones de tu solicitud.";
+const statusToneClass = status.tone === "positive"
+  ? "border-green-200 bg-green-50 text-green-800"
+  : status.tone === "warning"
+    ? "border-amber-200 bg-amber-50 text-amber-900"
+    : status.tone === "danger"
+      ? "border-red-200 bg-red-50 text-red-800"
+      : "border-warm-gray/15 bg-cream text-warm-gray";
+const listing = booking?.room?.listing;
+const offerIsContactable = booking?.room?.status === "published" &&
+  listing?.listingStatus === "published" && listing?.deletedAt == null &&
+  listing?.hostUserId === booking?.hostUserId;
+const conversationHref = booking?.relatedConversationId
+  ? `/mensajes?conversationId=${encodeURIComponent(booking.relatedConversationId)}`
+  : offerIsContactable && booking?.roomId && listing?.id
+    ? `/mensajes?contact=1&roomId=${encodeURIComponent(booking.roomId)}&listingId=${encodeURIComponent(listing.id)}`
+    : "/mensajes";
+const requestDate = formatDate(booking?.createdAt);
+---
+
+<AppLayout title="Detalle de solicitud | LOOKHOME">
+  <div class="mx-auto max-w-5xl space-y-6">
+    <header class="space-y-4">
+      <a
+        href="/reservas"
+        class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-terracotta-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+      >
+        <span aria-hidden="true">←</span> Volver a mis solicitudes
+      </a>
+      <div>
+        <p class="text-sm font-semibold text-terracotta-strong">Tu cuenta · Mis solicitudes</p>
+        <h1 class="mt-2 text-3xl font-bold tracking-tight text-warm-gray sm:text-4xl">
+          Detalle de solicitud
+        </h1>
+        <p class="mt-2 max-w-2xl leading-6 text-warm-gray/70">
+          Revisa el estado, las fechas y las condiciones que enviaste al anfitrión.
+        </p>
+      </div>
+    </header>
+
+    {loadError ? (
+      <section role="alert" class="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+        <h2 class="font-bold">No pudimos mostrar esta solicitud</h2>
+        <p class="mt-2">Comprueba el enlace o tu conexión y vuelve a intentarlo desde tus solicitudes.</p>
+        <a href="/reservas" class="mt-3 inline-flex min-h-11 items-center font-semibold underline">Ver mis solicitudes</a>
+      </section>
+    ) : (
+      <>
+        <section
+          aria-labelledby="request-status-title"
+          class="rounded-3xl border border-warm-gray/10 bg-white p-5 shadow-[0_18px_50px_rgba(80,76,74,0.06)] sm:p-7"
+        >
+          <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div class="max-w-2xl">
+              <p class="text-xs font-bold uppercase tracking-[0.14em] text-warm-gray/55">Estado de la solicitud</p>
+              <h2 id="request-status-title" class="mt-2 text-2xl font-bold text-warm-gray">Estado de tu solicitud</h2>
+              <p class="mt-2 leading-6 text-warm-gray/75">{statusDescription}</p>
+            </div>
+            <div class="shrink-0 rounded-2xl bg-cream px-4 py-3 sm:min-w-44">
+              <p class="text-xs font-semibold uppercase tracking-[0.1em] text-warm-gray/55">Enviada el</p>
+              <p class="mt-1 font-semibold text-warm-gray">{requestDate}</p>
+            </div>
+          </div>
+          <div class="mt-5 border-t border-warm-gray/10 pt-4">
+            <span class={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${statusToneClass}`}>
+              {status.label}
+            </span>
+          </div>
+        </section>
+
+        {bookingStatus === "accepted" && (
+          <TenantBookingStartForm
+            client:load
+            bookingId={booking.id}
+            startDateLabel={formatDate(booking.startDate)}
+            canStart={canConfirmStart}
+            startWindowExpired={startWindowExpired}
+          />
+        )}
+
+        {bookingStatus === "completed" && reviewStatus && (
+          <a
+            href="#booking-review"
+            class="inline-flex min-h-11 items-center rounded-xl bg-terracotta-strong px-4 text-sm font-semibold text-white hover:bg-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+          >
+            {reviewStatus.review ? "Ver tu reseña" : "Dejar reseña"}
+          </a>
+        )}
+
+        {(reviewStatus || reviewStatusError) && (
+          <BookingReviewForm
+            client:load
+            bookingId={booking.id}
+            revieweeName={hostName}
+            publication="offer"
+            bookingStatus={bookingStatus}
+            initialStatus={reviewStatus}
+            initialStatusError={reviewStatusError}
+          />
+        )}
+
+        <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.85fr)]">
+          <div class="space-y-6">
+            <section aria-labelledby="stay-details-title" class="rounded-3xl border border-warm-gray/10 bg-white p-5 shadow-[0_18px_50px_rgba(80,76,74,0.06)] sm:p-7">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-[0.14em] text-terracotta-strong">Tu solicitud</p>
+                  <h2 id="stay-details-title" class="mt-2 text-xl font-bold text-warm-gray">{booking.room?.listing?.title || "Anuncio"}</h2>
+                  <p class="mt-1 text-sm text-warm-gray/70">{booking.room?.name || "Unidad no especificada"}</p>
+                </div>
+                <span class="inline-flex min-h-9 items-center rounded-full bg-cream px-3 text-sm font-semibold text-warm-gray">
+                  {monthly ? "Alquiler mensual" : rentalMode === "nightly" ? "Estancia por noche" : "Modalidad no especificada"}
+                </span>
+              </div>
+
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl bg-cream p-4">
+                  <p class="text-xs font-bold uppercase tracking-[0.1em] text-warm-gray/55">{monthly ? "Fecha de ingreso" : rentalMode === "nightly" ? "Check-in" : "Inicio"}</p>
+                  <p class="mt-2 text-lg font-bold text-warm-gray">{formatDate(booking.startDate)}</p>
+                </div>
+                <div class="rounded-2xl bg-cream p-4">
+                  <p class="text-xs font-bold uppercase tracking-[0.1em] text-warm-gray/55">{monthly ? "Fin del plazo" : rentalMode === "nightly" ? "Check-out" : "Fin"}</p>
+                  <p class="mt-2 text-lg font-bold text-warm-gray">{formatDate(booking.endDate)}</p>
+                </div>
+              </div>
+
+              <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+                {rentalMode && (
+                  <div class="rounded-2xl border border-warm-gray/10 px-4 py-3">
+                    <dt class="text-xs font-semibold text-warm-gray/60">Duración</dt>
+                    <dd class="mt-1 font-semibold text-warm-gray">{duration ? `${duration} ${monthly ? "meses" : "noches"}` : "—"}</dd>
+                  </div>
+                )}
+                {rentalMode === "nightly" && (
+                  <div class="rounded-2xl border border-warm-gray/10 px-4 py-3">
+                    <dt class="text-xs font-semibold text-warm-gray/60">Huéspedes</dt>
+                    <dd class="mt-1 font-semibold text-warm-gray">{booking.guestCount ?? "—"}</dd>
+                  </div>
+                )}
+                <div class="rounded-2xl border border-warm-gray/10 px-4 py-3">
+                  <dt class="text-xs font-semibold text-warm-gray/60">Anfitrión</dt>
+                  <dd class="mt-1 font-semibold text-warm-gray">{hostName}</dd>
+                </div>
+              </dl>
+
+              <div class="mt-5 rounded-2xl border border-warm-gray/10 px-4 py-4">
+                <p class="text-xs font-bold uppercase tracking-[0.1em] text-warm-gray/55">Mensaje enviado</p>
+                <p class="mt-2 whitespace-pre-wrap break-words leading-6 text-warm-gray">{booking.message || "No agregaste un mensaje a esta solicitud."}</p>
+              </div>
+            </section>
+          </div>
+
+          <aside class="space-y-5 lg:sticky lg:top-6">
+            <section aria-labelledby="estimate-title" class="rounded-3xl border border-warm-gray/10 bg-white p-5 shadow-[0_18px_50px_rgba(80,76,74,0.06)] sm:p-6">
+              <p class="text-xs font-bold uppercase tracking-[0.14em] text-terracotta-strong">Condiciones estimadas</p>
+              <h2 id="estimate-title" class="mt-2 text-xl font-bold text-warm-gray">Resumen del alquiler</h2>
+              <dl class="mt-5 space-y-4">
+                <div class="flex items-start justify-between gap-4">
+                  <dt class="text-sm text-warm-gray/70">Tarifa {monthly ? "por mes" : rentalMode === "nightly" ? "por noche" : "por período"}</dt>
+                  <dd class="text-right text-sm font-semibold text-warm-gray">{amount(booking.pricingSnapshot?.rentAmount)}</dd>
+                </div>
+                {duration && (
+                  <div class="flex items-start justify-between gap-4">
+                    <dt class="text-sm text-warm-gray/70">Duración</dt>
+                    <dd class="text-right text-sm font-semibold text-warm-gray">{duration} {monthly ? "meses" : "noches"}</dd>
+                  </div>
+                )}
+                {monthly && booking.pricingSnapshot?.depositAmount != null && (
+                  <div class="flex items-start justify-between gap-4">
+                    <dt class="max-w-40 text-sm text-warm-gray/70">Depósito, incluido en la estimación</dt>
+                    <dd class="text-right text-sm font-semibold text-warm-gray">{amount(booking.pricingSnapshot.depositAmount)}</dd>
+                  </div>
+                )}
+                {rentalMode === "nightly" && booking.pricingSnapshot?.cleaningFee != null && (
+                  <div class="flex items-start justify-between gap-4">
+                    <dt class="max-w-40 text-sm text-warm-gray/70">Limpieza, incluida en la estimación</dt>
+                    <dd class="text-right text-sm font-semibold text-warm-gray">{amount(booking.pricingSnapshot.cleaningFee)}</dd>
+                  </div>
+                )}
+                <div class="border-t border-warm-gray/10 pt-4">
+                  <dt class="text-sm font-semibold text-warm-gray">Total estimado del alquiler</dt>
+                  <dd class="mt-1 text-2xl font-bold tracking-tight text-warm-gray">{amount(booking.pricingSnapshot?.totalAmount)}</dd>
+                </div>
+              </dl>
+              <p class="mt-4 rounded-2xl bg-cream px-4 py-3 text-sm leading-5 text-warm-gray/75">
+                Esta estimación no es un cobro ni confirma una reserva. El pago se coordina directamente entre tú y el anfitrión.
+              </p>
+            </section>
+
+            <section class="rounded-3xl border border-terracotta-strong/15 bg-cream p-5 sm:p-6">
+              <h2 class="font-bold text-warm-gray">¿Tienes alguna consulta?</h2>
+              <p class="mt-1 text-sm leading-5 text-warm-gray/70">Escribe al anfitrión para coordinar los detalles de esta oferta.</p>
+              <a
+                href={conversationHref}
+                class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-terracotta-strong px-4 text-sm font-semibold text-white transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+              >
+                {booking.relatedConversationId ? "Ver conversación" : offerIsContactable ? "Consultar al anfitrión" : "Ir a mis mensajes"}
+              </a>
+            </section>
+          </aside>
+        </div>
+      </>
+    )}
+  </div>
+</AppLayout>

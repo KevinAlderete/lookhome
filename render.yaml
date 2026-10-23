@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: lookhome-api
+    runtime: node
+    plan: starter
+    region: virginia
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:generate && pnpm --filter api build
+    startCommand: pnpm --filter api start
+    healthCheckPath: /api/auth/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: MEDIA_STORAGE_PROVIDER
+        value: b2
+      - key: MEDIA_MAX_STORAGE_BYTES_PER_USER
+        value: "2147483648"
+      - key: MEDIA_CLEANUP_INTERVAL_MS
+        value: "900000"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAPTILER_GEOCODING_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
+      - key: B2_ENDPOINT
+        sync: false
+      - key: B2_REGION
+        sync: false
+      - key: B2_BUCKET
+        sync: false
+      - key: B2_ACCESS_KEY_ID
+        sync: false
+      - key: B2_SECRET_ACCESS_KEY
+        sync: false

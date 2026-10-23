@@ -1,0 +1,93 @@
+---
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import Hero from "@/sections/Hero.astro";
+import FeaturedHomes from "@/sections/FeaturedHomes.astro";
+---
+
+<PublicLayout
+  title="LOOKHOME | Encuentra dónde vivir o publica tu espacio"
+  description="Busca viviendas completas, habitaciones y camas compartidas en Perú, o publica tu espacio para alquilarlo."
+  socialImage="/Logo.png"
+>
+  <Hero />
+
+  <FeaturedHomes server:defer isAuthenticated={Boolean(Astro.locals.user)}>
+    <section
+      slot="fallback"
+      class="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8"
+      aria-labelledby="featured-homes-loading-title"
+      aria-busy="true"
+    >
+      <div class="mb-7">
+        <p class="text-sm font-semibold text-terracotta-strong">Anuncios publicados</p>
+        <h2 id="featured-homes-loading-title" class="mt-1 text-2xl text-warm-gray sm:text-3xl">
+          Espacios para explorar
+        </h2>
+      </div>
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+        {Array.from({ length: 3 }).map(() => (
+          <div class="overflow-hidden rounded-2xl border border-warm-gray/10 bg-white">
+            <div class="aspect-[16/10] animate-pulse bg-warm-gray/10 motion-reduce:animate-none"></div>
+            <div class="space-y-3 p-4">
+              <div class="h-4 w-3/4 animate-pulse rounded bg-warm-gray/10 motion-reduce:animate-none"></div>
+              <div class="h-3 w-1/2 animate-pulse rounded bg-warm-gray/10 motion-reduce:animate-none"></div>
+              <div class="h-3 w-2/3 animate-pulse rounded bg-warm-gray/10 motion-reduce:animate-none"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p class="sr-only" role="status">Cargando anuncios publicados…</p>
+    </section>
+  </FeaturedHomes>
+
+  <section class="border-y border-warm-gray/8 bg-white/65" aria-labelledby="how-it-works-title">
+    <div class="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <div class="max-w-2xl">
+        <p class="text-sm font-semibold text-terracotta-strong">Dos formas de usar LOOKHOME</p>
+        <h2 id="how-it-works-title" class="mt-1 text-2xl text-warm-gray sm:text-3xl">
+          Encuentra un espacio o publícalo
+        </h2>
+      </div>
+
+      <div class="mt-8 grid gap-5 md:grid-cols-2 md:gap-6">
+        <article class="rounded-2xl border border-warm-gray/10 bg-white p-5 sm:p-7">
+          <h3 class="text-lg text-warm-gray">Si estás buscando</h3>
+          <ol class="mt-4 space-y-3 text-sm leading-6 text-warm-gray/75">
+            <li><span class="font-bold text-warm-gray">Busca por ubicación.</span> Elige un distrito, provincia o departamento y revisa los anuncios en el mapa.</li>
+            <li><span class="font-bold text-warm-gray">Compara cada espacio.</span> Consulta fotos, características y precio por día o por mes.</li>
+            <li><span class="font-bold text-warm-gray">Contacta o envía una solicitud.</span> El anfitrión revisa y aprueba o rechaza las solicitudes.</li>
+          </ol>
+          <a href="/buscar" class="mt-5 inline-flex min-h-11 items-center rounded-xl bg-terracotta px-4 text-sm font-bold text-[#231f1d] transition hover:bg-soft-coral focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warm-gray">
+            Explorar espacios
+          </a>
+        </article>
+
+        <article class="rounded-2xl border border-warm-gray/10 bg-white p-5 sm:p-7">
+          <h3 class="text-lg text-warm-gray">Si quieres publicar</h3>
+          <ol class="mt-4 space-y-3 text-sm leading-6 text-warm-gray/75">
+            <li><span class="font-bold text-warm-gray">Activa tu perfil de anfitrión.</span> Conservas tu cuenta y puedes empezar tu anuncio.</li>
+            <li><span class="font-bold text-warm-gray">Completa la publicación.</span> Añade ubicación, fotos, características, precio y modalidad de alquiler.</li>
+            <li><span class="font-bold text-warm-gray">Revisa las solicitudes.</span> Puedes aprobarlas o rechazarlas desde LOOKHOME.</li>
+          </ol>
+          <a href="/publicar" class="mt-5 inline-flex min-h-11 items-center rounded-xl border border-warm-gray/20 bg-white px-4 text-sm font-bold text-warm-gray transition hover:border-terracotta/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta">
+            Ver cómo publicar
+          </a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8" aria-labelledby="host-invite-title">
+    <div class="flex flex-col gap-5 rounded-3xl bg-warm-gray px-5 py-7 text-white sm:px-8 sm:py-9 md:flex-row md:items-center md:justify-between">
+      <div class="max-w-2xl">
+        <h2 id="host-invite-title" class="text-2xl text-white sm:text-3xl">¿Tienes un espacio para alquilar?</h2>
+        <p class="mt-2 text-sm leading-6 text-white/75 sm:text-base">
+          Publica viviendas completas, habitaciones o camas compartidas y define si las alquilas por día o por mes.
+        </p>
+      </div>
+      <a href="/publicar" class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-terracotta-strong px-5 font-semibold text-white transition hover:bg-[#93482f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+        Publicar mi espacio
+      </a>
+    </div>
+  </section>
+</PublicLayout>

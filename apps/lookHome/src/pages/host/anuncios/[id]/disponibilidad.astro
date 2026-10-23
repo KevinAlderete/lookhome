@@ -1,0 +1,25 @@
+---
+import HostLayout from "@/layouts/HostLayout.astro";
+import HostAvailabilityManager from "@/components/islands/host/HostAvailabilityManager";
+import { getHostListingById } from "@/features/host/listings/api/server";
+import { getRoomRules, getRoomBlocks } from "@/features/host/availability/api/server";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const { id } = Astro.params;
+const listing = await getHostListingById(Astro.request, id!);
+const offer = listing.offerCount === 1 ? listing.offer : null;
+const [rules, blocks] = offer
+  ? await Promise.all([getRoomRules(Astro.request, offer.id), getRoomBlocks(Astro.request, offer.id)])
+  : [[], []];
+---
+
+<HostLayout title="Disponibilidad | LOOKHOME">
+  <div class="space-y-7">
+    <header><p class="host-eyebrow">{listing.title || "Anuncio"}</p><h1 class="text-4xl font-black text-warm-gray">Disponibilidad</h1><p class="mt-2 text-warm-gray/70">Configura rangos disponibles, patrones semanales y bloqueos desde el anuncio.</p></header>
+    {listing.requiresOfferReview ? (
+      <section role="status" class="rounded-3xl border border-amber-300 bg-amber-50 p-6"><h2 class="text-xl font-bold">Disponibilidad protegida</h2><p class="mt-2 text-sm leading-6">Este anuncio conserva varias ofertas históricas. Sus calendarios no se combinarán ni cambiarán automáticamente.</p><a href={`/host/anuncios/${encodeURIComponent(id!)}/editar`} class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-amber-400 px-4 font-semibold">Volver al anuncio</a></section>
+    ) : offer ? <HostAvailabilityManager client:load offerId={offer.id} rules={rules} blocks={blocks} /> : <section role="status" class="rounded-3xl border border-amber-300 bg-amber-50 p-6"><h2 class="text-xl font-bold">Completa la oferta para configurar disponibilidad</h2><p class="mt-2 text-sm">Primero guarda el tipo de oferta, la modalidad y sus datos.</p><a href={`/host/anuncios/${encodeURIComponent(id!)}/editar#datos`} class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-terracotta px-4 font-semibold text-white">Editar anuncio</a></section>}
+  </div>
+</HostLayout>

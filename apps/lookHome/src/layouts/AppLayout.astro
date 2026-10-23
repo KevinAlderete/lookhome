@@ -1,0 +1,151 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import SessionMenu from "@/components/islands/auth/SessionMenu";
+import { getUserAvatar, getUserDisplayName } from "@/lib/auth/user";
+
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+interface Props {
+  title?: string;
+  navItems?: NavItem[];
+  activePath?: string;
+}
+
+const { title, activePath = Astro.url.pathname } = Astro.props;
+const user = Astro.locals.user;
+
+const displayName = getUserDisplayName(user);
+const avatarUrl = getUserAvatar(user);
+const roles = Array.isArray(user?.roles)
+  ? user.roles.map((role: any) =>
+      typeof role === "string"
+        ? role
+        : (role?.name ?? role?.code ?? role?.slug ?? role?.id),
+    )
+  : [];
+const canHost = roles.some((role: string) =>
+  ["HOST", "ADMIN"].includes(String(role ?? "").toUpperCase()),
+);
+const navItems = Astro.props.navItems ?? [
+  { href: "/perfil", label: "Mi cuenta" },
+  { href: "/favoritos", label: "Favoritos" },
+  { href: "/reservas", label: "Mis solicitudes" },
+  { href: "/mensajes", label: "Mensajes" },
+  { href: "/notificaciones", label: "Notificaciones" },
+  ...(canHost
+    ? [{ href: "/host", label: "Panel del anfitrión" }]
+    : []),
+];
+const isActive = (href: string) => activePath === href || activePath.startsWith(`${href}/`);
+---
+
+<BaseLayout title={title} noindex={true}>
+  <a
+    href="#app-main"
+    class="sr-only z-50 rounded-xl bg-white px-4 py-3 font-semibold text-warm-gray shadow-lg focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-2 focus:outline-offset-2 focus:outline-terracotta-strong"
+  >
+    Saltar al contenido principal
+  </a>
+  <div class="lh-app-shell min-h-screen bg-cream text-warm-gray">
+    <div
+      class="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[264px_1fr]"
+    >
+      <aside
+        class="hidden border-r border-warm-gray/10 bg-white/90 lg:flex lg:flex-col"
+      >
+        <div class="border-b border-warm-gray/10 px-6 py-5">
+          <a href="/" class="flex items-center gap-3">
+            <img src="/Logo.png" alt="LOOKHOME" class="h-10 w-auto" />
+          </a>
+        </div>
+
+        <div class="flex-1 px-4 py-5">
+          <nav class="space-y-2" aria-label="Navegación de tu cuenta">
+            {
+              navItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <a
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    class={`block rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                      active
+                        ? "bg-terracotta-strong text-white"
+                        : "text-warm-gray/75 hover:bg-cream hover:text-warm-gray"
+                    } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })
+            }
+          </nav>
+        </div>
+
+        <div class="border-t border-warm-gray/10 px-4 py-4">
+          {
+            user && (
+              <SessionMenu
+                client:load
+                displayName={displayName}
+                avatarUrl={avatarUrl}
+                roles={roles}
+              />
+            )
+          }
+        </div>
+      </aside>
+
+      <div class="min-w-0">
+        <header
+          class="border-b border-warm-gray/10 bg-white/90 px-4 py-4 backdrop-blur lg:hidden"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <a href="/" class="flex items-center gap-3">
+              <img src="/Logo.png" alt="LOOKHOME" class="h-10 w-auto" />
+            </a>
+
+            {
+              user && (
+                <SessionMenu
+                  client:load
+                  displayName={displayName}
+                  avatarUrl={avatarUrl}
+                  roles={roles}
+                />
+              )
+            }
+          </div>
+
+          <nav class="mt-4 flex gap-2 overflow-x-auto pb-1" aria-label="Navegación de tu cuenta">
+            {
+              navItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <a
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    class={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold ${
+                      active
+                        ? "bg-terracotta-strong text-white"
+                        : "border border-warm-gray/12 bg-white text-warm-gray"
+                    } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })
+            }
+          </nav>
+        </header>
+
+        <main id="app-main" tabindex="-1" class="lh-app-main px-4 py-6 md:px-6 lg:px-8">
+          <slot />
+        </main>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

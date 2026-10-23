@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title description">
+  <title id="title">Imagen de propiedad no disponible</title>
+  <desc id="description">Ilustracion de una casa sobre un fondo crema</desc>
+  <rect width="800" height="520" fill="#f7eee4"/>
+  <circle cx="650" cy="105" r="54" fill="#f0a892" opacity=".55"/>
+  <path d="M170 286 400 112l230 174v150H170Z" fill="#fffaf4" stroke="#504c4a" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M330 436V302h140v134M146 300l254-192 254 192" fill="none" stroke="#e78b6c" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M214 348h72v58h-72zm300 0h72v58h-72z" fill="#f0a892" opacity=".8"/>
+</svg>

@@ -1,0 +1,97 @@
+---
+import PropertyCard from "@/components/astro/PropertyCard.astro";
+import { getFeaturedSearchResults } from "@/features/search/api/server";
+import type { SearchResultItem } from "@/features/search/types";
+
+interface Props {
+  isAuthenticated?: boolean;
+}
+
+const { isAuthenticated = false } = Astro.props;
+let items: SearchResultItem[] = [];
+let total = 0;
+let hasError = false;
+
+try {
+  const result = await getFeaturedSearchResults(Astro.request);
+  items = result.items;
+  total = result.total;
+} catch {
+  hasError = true;
+}
+---
+
+<section
+  class="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8"
+  aria-labelledby="featured-homes-title"
+>
+  <header class="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-sm font-semibold text-terracotta-strong">Anuncios publicados</p>
+      <h2 id="featured-homes-title" class="mt-1 text-2xl text-warm-gray sm:text-3xl">
+        Espacios para explorar
+      </h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-warm-gray/70">
+        Viviendas completas, habitaciones y camas compartidas. Consulta el detalle para ver el precio por día o por mes y enviar una solicitud con tus fechas.
+      </p>
+    </div>
+    <a
+      href="/buscar"
+      class="inline-flex min-h-11 items-center justify-center self-start rounded-xl border border-warm-gray/20 bg-white px-4 text-sm font-semibold text-warm-gray transition hover:border-terracotta-strong/50 hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong sm:self-auto"
+    >
+      Ver todos los anuncios
+    </a>
+  </header>
+
+  {hasError ? (
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-7" role="alert">
+      <h3 class="font-bold text-red-900">No pudimos cargar los anuncios</h3>
+      <p class="mt-1 text-sm leading-6 text-red-800">
+        Puedes abrir la búsqueda para intentarlo nuevamente.
+      </p>
+      <a
+        href="/buscar"
+        class="mt-4 inline-flex min-h-10 items-center rounded-lg bg-warm-gray px-4 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+      >
+        Ir a buscar
+      </a>
+    </div>
+  ) : items.length > 0 ? (
+    <>
+      <p class="mb-4 text-xs font-semibold text-warm-gray/60" role="status">
+        {total} {total === 1 ? "espacio publicado" : "espacios publicados"}
+      </p>
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item, index) => (
+          <PropertyCard
+            item={item}
+            isAuthenticated={isAuthenticated}
+            priority={index === 0}
+            variant="featured"
+          />
+        ))}
+      </div>
+    </>
+  ) : (
+    <div class="rounded-2xl border border-dashed border-warm-gray/25 bg-white/70 px-5 py-8 text-center sm:py-10">
+      <h3 class="text-lg font-bold text-warm-gray">Aún no hay espacios publicados</h3>
+      <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-warm-gray/70">
+        Explora la búsqueda o publica un espacio para que pueda aparecer aquí cuando esté publicado.
+      </p>
+      <div class="mt-5 flex flex-wrap justify-center gap-3">
+        <a
+          href="/buscar"
+          class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/20 bg-white px-4 text-sm font-bold text-warm-gray hover:border-terracotta/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        >
+          Explorar anuncios
+        </a>
+        <a
+          href="/publicar"
+          class="inline-flex min-h-11 items-center rounded-xl bg-terracotta px-4 text-sm font-bold text-[#231f1d] hover:bg-soft-coral focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warm-gray"
+        >
+          Publicar un anuncio
+        </a>
+      </div>
+    </div>
+  )}
+</section>

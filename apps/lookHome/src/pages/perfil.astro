@@ -1,0 +1,194 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import ProfileEmailVerification from "@/components/islands/profile/ProfileEmailVerification";
+import ProfilePasswordForm from "@/components/islands/profile/ProfilePasswordForm";
+import ProfileSecurityActions from "@/components/islands/profile/ProfileSecurityActions";
+import ProfileSessionsPanel from "@/components/islands/profile/ProfileSessionsPanel";
+import ProfileSettingsForm from "@/components/islands/profile/ProfileSettingsForm";
+import {
+  getProfileMe,
+  getProfileSessions,
+} from "@/features/profile/api/server";
+import type { ProfileUser, UserSessionRow } from "@/features/profile/types";
+
+export const prerender = false;
+
+let me: ProfileUser | null = null;
+let sessions: UserSessionRow[] = [];
+let profileError: string | null = null;
+let sessionsError: string | null = null;
+const accessToken = Astro.cookies.get("lh_access_token")?.value;
+
+const [profileResult, sessionsResult] = await Promise.allSettled([
+  getProfileMe(Astro.request, accessToken),
+  getProfileSessions(Astro.request, accessToken),
+]);
+
+if (profileResult.status === "fulfilled") {
+  me = profileResult.value;
+} else {
+  profileError = "No pudimos cargar los datos de tu perfil. Intenta nuevamente.";
+  console.error("Private profile could not be loaded");
+}
+
+if (sessionsResult.status === "fulfilled") {
+  sessions = sessionsResult.value;
+} else {
+  sessionsError = "No pudimos cargar tus sesiones. Intenta más tarde.";
+  console.error("Account sessions could not be loaded");
+}
+
+const roleLabels: Record<string, string> = {
+  tenant: "Huésped",
+  host: "Anfitrión",
+  admin: "Administrador",
+  moderator: "Moderador",
+  support: "Soporte",
+};
+const roles = (me?.roles ?? []).map((role) => roleLabels[role] ?? "Usuario");
+const isHost = me?.roles?.includes("host") ?? false;
+const publicProfileHref = isHost && me ? `/anfitriones/${me.id}` : null;
+const statusLabels: Record<string, string> = {
+  active: "Activa",
+  pending: "Pendiente",
+  blocked: "Restringida",
+  deleted: "Cerrada",
+};
+const accountStatus = me?.status
+  ? statusLabels[me.status] ?? "Estado no disponible"
+  : "Estado no disponible";
+---
+
+<AppLayout title="Mi perfil | LOOKHOME">
+  <div class="mx-auto max-w-5xl space-y-7 pb-12">
+    <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-sm font-semibold text-terracotta-strong">Tu cuenta</p>
+        <h1 class="mt-1 text-3xl font-bold text-warm-gray sm:text-4xl">
+          Mi perfil
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-warm-gray/70">
+          Administra tu identidad pública, tus datos personales y la seguridad de tu cuenta.
+        </p>
+      </div>
+    </header>
+
+    <nav
+      aria-label="Secciones de tu perfil"
+      class="flex gap-2 overflow-x-auto border-b border-warm-gray/12 pb-2"
+    >
+      {[
+        { href: "#perfil-y-preferencias", label: "Perfil y preferencias" },
+        { href: "#datos-de-cuenta", label: "Cuenta y contacto" },
+        { href: "#seguridad", label: "Seguridad" },
+        { href: "#sesiones", label: "Sesiones" },
+      ].map((item) => (
+        <a
+          href={item.href}
+          class="min-h-10 shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-warm-gray/75 transition hover:bg-white hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    {profileError ? (
+      <section
+        class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+        role="alert"
+      >
+        <p>{profileError}</p>
+        <a
+          href="/perfil"
+          class="mt-3 inline-flex min-h-10 items-center font-semibold underline"
+        >
+          Volver a intentar
+        </a>
+      </section>
+    ) : me ? (
+      <>
+        <ProfileSettingsForm
+          client:load
+          initialProfile={me.profile ?? null}
+          publicProfileHref={publicProfileHref}
+        />
+
+        <section
+          id="datos-de-cuenta"
+          class="scroll-mt-6 rounded-3xl border border-warm-gray/10 bg-white p-5 shadow-[0_12px_36px_rgba(80,76,74,0.07)] sm:p-7"
+          aria-labelledby="account-details-title"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-terracotta-strong">Privado</p>
+              <h2 id="account-details-title" class="mt-1 text-2xl font-bold">
+                Cuenta y contacto
+              </h2>
+              <p class="mt-2 text-sm leading-6 text-warm-gray/70">
+                Estos datos solo aparecen en tu cuenta. Cambiar el correo o el teléfono requiere verificación.
+              </p>
+            </div>
+            <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">
+              {accountStatus}
+            </span>
+          </div>
+
+          <dl class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl bg-cream px-4 py-4">
+              <dt class="text-xs font-semibold text-warm-gray/60">Correo electrónico</dt>
+              <dd class="mt-1 flex flex-wrap items-center gap-2 break-all text-sm font-semibold text-warm-gray">
+                {me.email || "No registrado"}
+                {me.email && (
+                  <span class={`rounded-full px-2 py-0.5 text-[11px] ${me.contactVerification?.email ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-900"}`}>
+                    {me.contactVerification?.email ? "Verificado" : "Pendiente"}
+                  </span>
+                )}
+              </dd>
+              {me.email && !me.contactVerification?.email && (
+                <ProfileEmailVerification client:visible />
+              )}
+            </div>
+            <div class="rounded-2xl bg-cream px-4 py-4">
+              <dt class="text-xs font-semibold text-warm-gray/60">Teléfono</dt>
+              <dd class="mt-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-warm-gray">
+                {me.phoneE164 || "No registrado"}
+                {me.phoneE164 && (
+                  <span class={`rounded-full px-2 py-0.5 text-[11px] ${me.contactVerification?.phone ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-900"}`}>
+                    {me.contactVerification?.phone ? "Verificado" : "Pendiente"}
+                  </span>
+                )}
+              </dd>
+            </div>
+            {roles.length > 0 && (
+              <div class="rounded-2xl bg-cream px-4 py-4 sm:col-span-2">
+                <dt class="text-xs font-semibold text-warm-gray/60">Tu cuenta en LOOKHOME</dt>
+                <dd class="mt-2 flex flex-wrap gap-2">
+                  {roles.map((role) => (
+                    <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-warm-gray">
+                      {role}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        <section id="seguridad" class="scroll-mt-6 space-y-5" aria-label="Seguridad de la cuenta">
+          <ProfilePasswordForm client:visible />
+          <ProfileSecurityActions client:visible />
+        </section>
+
+        <section id="sesiones" class="scroll-mt-6" aria-label="Sesiones activas">
+          {sessionsError ? (
+            <p class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
+              {sessionsError}
+            </p>
+          ) : (
+            <ProfileSessionsPanel client:visible initialRows={sessions} />
+          )}
+        </section>
+      </>
+    ) : null}
+  </div>
+</AppLayout>

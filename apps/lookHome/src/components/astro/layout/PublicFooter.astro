@@ -1,0 +1,22 @@
+---
+const user = Astro.locals.user;
+---
+
+<footer class="border-t border-warm-gray/10 bg-white/85 px-5 py-8 text-sm text-warm-gray/70 sm:px-8 lg:px-10">
+  <div class="mx-auto flex max-w-[1280px] flex-col gap-5 md:flex-row md:items-center md:justify-between">
+    <p>© 2026 LOOKHOME. Todos los derechos reservados.</p>
+    <nav aria-label="Enlaces del pie de página" class="flex flex-wrap gap-x-5 gap-y-2 font-semibold">
+      <a href="/" class="inline-flex min-h-11 items-center rounded-sm px-1 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Inicio</a>
+      <a href="/buscar" class="inline-flex min-h-11 items-center rounded-sm px-1 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Buscar</a>
+      <a href="/publicar" class="inline-flex min-h-11 items-center rounded-sm px-1 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Publicar</a>
+      {user ? (
+         <a href="/perfil" class="inline-flex min-h-11 items-center rounded-sm px-1 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Mi perfil</a>
+      ) : (
+        <>
+           <a href="/login" class="inline-flex min-h-11 items-center rounded-sm px-1 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Iniciar sesión</a>
+           <a href="/registro" class="inline-flex min-h-11 items-center rounded-sm px-1 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Crear cuenta</a>
+        </>
+      )}
+    </nav>
+  </div>
+</footer>

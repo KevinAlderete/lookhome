@@ -1,0 +1,80 @@
+---
+const user = Astro.locals.user;
+---
+
+<header
+  class="relative z-30 border-b border-warm-gray/10 bg-white/95 px-4 py-3 sm:py-4 lg:px-10"
+>
+  <div class="mx-auto flex max-w-[1280px] items-center justify-between gap-4">
+    <a href="/" class="flex min-h-11 items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-terracotta">
+        <img src="/Logo.png" alt="LOOKHOME, inicio" width="512" height="143" class="h-9 w-auto sm:h-10" />
+    </a>
+
+    <nav
+      aria-label="Navegación principal"
+      class="hidden items-center gap-6 text-sm font-semibold text-warm-gray/80 lg:flex"
+    >
+      <a href="/" class="inline-flex min-h-11 items-center rounded-md px-2 transition hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Inicio</a>
+      <a href="/buscar" class="inline-flex min-h-11 items-center rounded-md px-2 transition hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Buscar</a>
+      <a href="/publicar" class="inline-flex min-h-11 items-center rounded-md px-2 transition hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Publicar</a>
+
+      {
+        user ? (
+          <div class="flex items-center gap-3">
+            <a
+              href="/perfil"
+              class="min-h-11 rounded-xl border border-warm-gray/15 px-4 py-2 transition hover:border-terracotta-strong/50 hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+            >
+              {user.name}
+            </a>
+          </div>
+        ) : (
+          <div class="flex items-center gap-3">
+            <a
+              href="/login"
+              class="min-h-11 rounded-xl border border-warm-gray/15 px-4 py-2 transition hover:border-terracotta-strong/50 hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+            >
+              Iniciar sesión
+            </a>
+            <a
+              href="/registro"
+              class="min-h-11 rounded-xl bg-terracotta-strong px-4 py-2 font-semibold text-white transition hover:bg-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong"
+            >
+              Crear cuenta
+            </a>
+          </div>
+        )
+      }
+    </nav>
+
+    <details class="relative lg:hidden">
+      <summary
+        aria-label="Abrir menú principal"
+        class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-warm-gray/15 bg-white px-3 text-sm font-semibold text-warm-gray transition hover:border-terracotta-strong/50 hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong [&::-webkit-details-marker]:hidden"
+      >
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+        Menú
+      </summary>
+      <nav
+        aria-label="Navegación móvil"
+        class="absolute right-0 top-full z-50 mt-2 grid w-56 gap-1 rounded-2xl border border-warm-gray/12 bg-white p-2 text-sm font-semibold text-warm-gray shadow-[0_14px_36px_rgba(48,43,41,0.12)]"
+      >
+        <a href="/" class="flex min-h-11 items-center rounded-xl px-3 py-3 hover:bg-cream focus-visible:outline-2 focus-visible:outline-terracotta-strong">Inicio</a>
+        <a href="/buscar" class="flex min-h-11 items-center rounded-xl px-3 py-3 hover:bg-cream focus-visible:outline-2 focus-visible:outline-terracotta-strong">Buscar</a>
+        <a href="/publicar" class="flex min-h-11 items-center rounded-xl px-3 py-3 hover:bg-cream focus-visible:outline-2 focus-visible:outline-terracotta-strong">Publicar un anuncio</a>
+        {user ? (
+          <a href="/perfil" class="min-h-11 rounded-xl border-t border-warm-gray/10 px-3 py-3 hover:bg-cream focus-visible:outline-2 focus-visible:outline-terracotta">
+            {user.name}
+          </a>
+        ) : (
+          <div class="grid gap-1 border-t border-warm-gray/10 pt-1">
+            <a href="/login" class="min-h-11 rounded-xl px-3 py-3 hover:bg-cream focus-visible:outline-2 focus-visible:outline-terracotta">Iniciar sesión</a>
+          <a href="/registro" class="min-h-11 rounded-xl bg-cream px-3 py-3 font-semibold text-terracotta-strong hover:bg-soft-coral/20 focus-visible:outline-2 focus-visible:outline-terracotta-strong">Crear cuenta</a>
+          </div>
+        )}
+      </nav>
+    </details>
+  </div>
+</header>

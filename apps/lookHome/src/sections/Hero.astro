@@ -1,0 +1,47 @@
+---
+import HomeLocationSearch from "@/components/islands/search/HomeLocationSearch";
+---
+
+<section class="mx-auto grid w-full min-w-0 max-w-[1280px] grid-cols-1 gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.82fr)] lg:items-center lg:gap-14 lg:px-8 lg:py-20">
+  <div class="min-w-0 max-w-2xl space-y-5">
+    <p class="text-sm font-semibold text-terracotta-strong">
+      Encuentra tu próximo espacio
+    </p>
+    <h1 class="max-w-[15ch] text-4xl font-normal leading-[1.12] text-warm-gray sm:text-5xl">
+      Encuentra dónde vivir. Publica tu espacio.
+    </h1>
+    <p class="max-w-xl text-base leading-7 text-warm-gray/75 sm:text-lg sm:leading-8">
+      Explora viviendas completas, habitaciones y camas compartidas. Si tienes un espacio, publícalo para que otras personas puedan encontrarlo.
+    </p>
+
+    <HomeLocationSearch client:load />
+
+    <p class="text-sm text-warm-gray/70">
+      ¿Eres anfitrión? <a href="/publicar" class="font-semibold text-terracotta-strong underline decoration-terracotta/50 underline-offset-4 hover:text-warm-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta-strong">Publica un anuncio</a> y define si alquilas por día o por mes.
+    </p>
+  </div>
+
+  <div class="relative hidden min-h-[23rem] overflow-hidden rounded-3xl border border-warm-gray/10 bg-[#F5EFE8] p-4 sm:block lg:min-h-[27rem] lg:p-6">
+    <div class="relative flex h-full min-h-[19rem] flex-col justify-between rounded-2xl border border-warm-gray/10 bg-white/90 p-6 lg:min-h-[23rem] lg:p-8">
+      <div>
+        <span class="inline-flex rounded-full bg-cream px-3 py-1.5 text-xs font-semibold text-terracotta-strong">Una búsqueda más clara</span>
+        <p class="mt-5 max-w-sm text-2xl font-normal leading-snug text-warm-gray lg:text-3xl">
+          Compara espacios y precios con su modalidad visible.
+        </p>
+      </div>
+      <div class="mt-8 grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-warm-gray/10 bg-cream px-4 py-4">
+          <p class="text-xs font-semibold text-warm-gray/65">Alquiler</p>
+          <p class="mt-1 font-bold text-warm-gray">Por día</p>
+        </div>
+        <div class="rounded-xl border border-warm-gray/10 bg-cream px-4 py-4">
+          <p class="text-xs font-semibold text-warm-gray/65">Alquiler</p>
+          <p class="mt-1 font-bold text-warm-gray">Por mes</p>
+        </div>
+      </div>
+      <p class="mt-5 text-sm leading-6 text-warm-gray/70">
+        Envía una solicitud desde el anuncio. El anfitrión la revisa y responde.
+      </p>
+    </div>
+  </div>
+</section>

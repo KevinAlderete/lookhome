@@ -1,0 +1,37 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import PublicHeader from "@/components/astro/layout/PublicHeader.astro";
+import PublicFooter from "@/components/astro/layout/PublicFooter.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  socialImage?: string;
+  hideHeader?: boolean;
+  hideFooter?: boolean;
+}
+
+const {
+  title,
+  description,
+  socialImage,
+  hideHeader = false,
+  hideFooter = false,
+} = Astro.props;
+---
+
+<BaseLayout title={title} description={description} socialImage={socialImage}>
+  <div class="lh-public-shell min-h-screen bg-cream text-warm-gray">
+    <a
+      href="#public-main"
+      class="sr-only z-50 rounded-xl bg-white px-4 py-3 font-semibold text-warm-gray shadow-lg focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-2 focus:outline-offset-2 focus:outline-terracotta-strong"
+    >
+      Saltar al contenido principal
+    </a>
+    {!hideHeader && <PublicHeader />}
+    <main id="public-main" class="lh-public-main" tabindex="-1">
+      <slot />
+    </main>
+    {!hideFooter && <PublicFooter />}
+  </div>
+</BaseLayout>

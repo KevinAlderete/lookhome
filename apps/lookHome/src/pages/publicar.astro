@@ -1,0 +1,58 @@
+---
+import PublicLayout from "@/layouts/PublicLayout.astro";
+
+export const prerender = false;
+
+const activationFailed = Astro.url.searchParams.has("error");
+---
+
+<PublicLayout
+  title="Publica tu propiedad | LOOKHOME"
+  description="Activa tu perfil de anfitrión para comenzar a publicar en LOOKHOME."
+>
+  <section class="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
+    <div
+      class="overflow-hidden rounded-3xl border border-warm-gray/10 bg-white shadow-[0_12px_28px_rgba(48,43,41,0.08)]"
+    >
+      <div class="h-1 bg-terracotta-strong"></div>
+      <div class="space-y-7 p-6 sm:p-10 lg:p-12">
+        <div class="space-y-3">
+          <p class="text-sm font-semibold text-terracotta-strong">
+            Empieza a recibir huéspedes
+          </p>
+          <h1 class="max-w-[17ch] text-4xl font-normal leading-tight text-warm-gray sm:text-5xl">
+            Convierte tu espacio en una oportunidad.
+          </h1>
+          <p class="max-w-2xl text-lg leading-relaxed text-warm-gray/70">
+            Activaremos tu perfil de anfitrión sin cambiar tu cuenta de
+            inquilino. Luego podrás crear y administrar tu primer anuncio.
+          </p>
+        </div>
+
+        {
+          activationFailed && (
+            <p
+              role="alert"
+              class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+            >
+              No pudimos activar tu perfil de anfitrión. Inténtalo nuevamente.
+            </p>
+          )
+        }
+
+        <form method="POST" action="/api/users/activate-host">
+          <button
+            type="submit"
+            class="min-h-12 w-full rounded-xl bg-terracotta-strong px-6 py-3 text-base font-semibold text-white transition hover:bg-warm-gray sm:w-auto"
+          >
+            Activar y crear mi anuncio
+          </button>
+        </form>
+
+        <p class="text-sm text-warm-gray/55">
+          La activación es inmediata y no modifica tus reservas ni favoritos.
+        </p>
+      </div>
+    </div>
+  </section>
+</PublicLayout>

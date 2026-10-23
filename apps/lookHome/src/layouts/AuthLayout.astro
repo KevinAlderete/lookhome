@@ -1,0 +1,16 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="lh-auth-shell min-h-screen bg-cream text-warm-gray">
+    <slot />
+  </div>
+</BaseLayout>

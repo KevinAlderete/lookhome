@@ -1,0 +1,36 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import NotificationInbox from "@/components/islands/notifications/NotificationInbox";
+import { getMyNotifications } from "@/features/notifications/api/server";
+import type { AppNotificationPage } from "@/features/notifications/types";
+
+export const prerender = false;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const pageValue = Number(Astro.url.searchParams.get("page") ?? 1);
+const pageNumber = Number.isSafeInteger(pageValue) && pageValue > 0 ? pageValue : 1;
+let page: AppNotificationPage = { items: [], page: 1, pageSize: 20, total: 0, unreadCount: 0, hasMore: false };
+let loadError = false;
+try {
+  page = await getMyNotifications(Astro.request, { page: pageNumber, pageSize: 20 }, Astro.cookies.get("lh_access_token")?.value);
+} catch {
+  loadError = true;
+}
+---
+
+<AppLayout title="Notificaciones | LOOKHOME">
+  <div class="mx-auto max-w-4xl space-y-7 pb-12">
+    <header>
+      <p class="text-sm font-semibold text-terracotta-strong">Tu cuenta</p>
+      <h1 class="mt-1 text-3xl font-bold text-warm-gray sm:text-4xl">Notificaciones</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-warm-gray/75">Avisos sobre tus conversaciones y actividad en LOOKHOME.</p>
+    </header>
+    {loadError ? (
+      <section role="alert" class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+        <h2 class="font-bold">No pudimos cargar tus notificaciones</h2>
+        <p class="mt-2">Comprueba tu conexión e inténtalo de nuevo.</p>
+        <a href="/notificaciones" class="mt-3 inline-flex min-h-11 items-center font-semibold underline focus-visible:outline-2 focus-visible:outline-offset-2">Reintentar</a>
+      </section>
+    ) : <NotificationInbox client:load initialPage={page} />}
+  </div>
+</AppLayout>

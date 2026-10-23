@@ -1,0 +1,71 @@
+---
+interface Props {
+  initialValues: {
+    search?: string;
+    status?: string;
+    offerType?: string;
+    rentalMode?: string;
+    pageSize?: string;
+  };
+}
+
+const { initialValues } = Astro.props;
+const statuses = [
+  ["", "Todos los estados"],
+  ["draft", "Borrador"],
+  ["pending_review", "En revisión"],
+  ["published", "Publicado"],
+  ["paused", "Pausado"],
+  ["suspended", "Suspendido"],
+  ["archived", "Archivado"],
+];
+const offerTypes = [
+  ["", "Todos los espacios"],
+  ["entire_place", "Vivienda completa"],
+  ["private_room", "Habitación privada"],
+  ["shared_bed", "Cama compartida"],
+];
+const rentalModes = [
+  ["", "Todas las modalidades"],
+  ["nightly", "Por día"],
+  ["monthly", "Por mes"],
+];
+const pageSizes = ["12", "24", "48"];
+---
+
+<form action="/host/anuncios" method="GET" class="rounded-[24px] bg-white p-5 shadow-[0_18px_50px_rgba(80,76,74,0.08)]">
+  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+    <label class="xl:col-span-2">
+      <span class="sr-only">Buscar título, descripción o ubicación</span>
+      <input name="search" value={initialValues.search ?? ""} placeholder="Título, descripción o ubicación…" class="h-11 w-full rounded-xl border border-warm-gray/12 px-3 outline-none" />
+    </label>
+    <label>
+      <span class="sr-only">Filtrar por estado</span>
+      <select name="status" class="h-11 w-full rounded-xl border border-warm-gray/12 px-3 outline-none">
+        {statuses.map(([value, label]) => <option value={value} selected={initialValues.status === value}>{label}</option>)}
+      </select>
+    </label>
+    <label>
+      <span class="sr-only">Filtrar por tipo de espacio</span>
+      <select name="offerType" class="h-11 w-full rounded-xl border border-warm-gray/12 px-3 outline-none">
+        {offerTypes.map(([value, label]) => <option value={value} selected={initialValues.offerType === value}>{label}</option>)}
+      </select>
+    </label>
+    <label>
+      <span class="sr-only">Filtrar por modalidad</span>
+      <select name="rentalMode" class="h-11 w-full rounded-xl border border-warm-gray/12 px-3 outline-none">
+        {rentalModes.map(([value, label]) => <option value={value} selected={initialValues.rentalMode === value}>{label}</option>)}
+      </select>
+    </label>
+    <div class="flex gap-2 md:col-span-2 xl:col-span-3">
+      <label class="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-warm-gray/12 px-3 text-sm text-warm-gray/70">
+        <span class="shrink-0">Mostrar</span>
+        <select name="pageSize" aria-label="Anuncios por página" class="h-10 min-w-0 flex-1 border-0 bg-transparent px-1 outline-none">
+          {pageSizes.map((size) => <option value={size} selected={(initialValues.pageSize ?? "12") === size}>{size} por página</option>)}
+        </select>
+      </label>
+      <button type="submit" class="min-h-11 flex-1 rounded-xl bg-terracotta px-4 font-semibold text-white hover:bg-soft-coral">Aplicar filtros</button>
+      <a href="/host/anuncios" class="inline-flex min-h-11 items-center rounded-xl border border-warm-gray/12 px-4 font-semibold text-warm-gray hover:bg-cream">Limpiar</a>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,122 @@
+---
+import ChatWindow from "@/components/islands/messaging/ChatWindow";
+import type {
+  ChatMessageItem,
+  ContactContext,
+  ConversationListItem,
+  MessageCursor,
+} from "@/features/messaging/types";
+
+interface Props {
+  conversations: ConversationListItem[];
+  messages: ChatMessageItem[];
+  initialHasMoreMessages: boolean;
+  initialMessageCursor: MessageCursor | null;
+  initialMessageSyncedAt: string | null;
+  initialMessagesLoaded: boolean;
+  initialConversationId: string | null;
+  openConversationOnMobile: boolean;
+  hostLayout: boolean;
+  initialConversationUnavailable: boolean;
+  currentUserId: string | null;
+  hasMoreConversations: boolean;
+  perspective?: "tenant" | "host";
+  canFilterByRole: boolean;
+  searchQuery: string;
+  unreadOnly: boolean;
+  contactContext: ContactContext | null;
+  invalidContactContext: boolean;
+  initialLoadError: string | null;
+}
+
+const {
+  conversations,
+  messages,
+  initialHasMoreMessages,
+  initialMessageCursor,
+  initialMessageSyncedAt,
+  initialMessagesLoaded,
+  initialConversationId,
+  openConversationOnMobile,
+  hostLayout,
+  initialConversationUnavailable,
+  currentUserId,
+  hasMoreConversations,
+  perspective,
+  canFilterByRole,
+  searchQuery,
+  unreadOnly,
+  contactContext,
+  invalidContactContext,
+  initialLoadError,
+} = Astro.props;
+---
+
+<div class="mx-auto flex w-full max-w-[1400px] flex-col gap-4 pb-4 sm:gap-7 sm:pb-12">
+  <header class="flex items-center justify-between">
+    <div>
+      <p class="hidden text-sm font-semibold text-terracotta-strong sm:block">
+        {canFilterByRole ? "Bandeja unificada" : "Tu cuenta"}
+      </p>
+      <h1
+        class="mt-0 text-2xl font-bold text-warm-gray sm:mt-1 sm:text-3xl lg:text-4xl"
+      >
+        {canFilterByRole ? "Conversaciones" : "Mensajes"}
+      </h1>
+      <p class="mt-2 hidden max-w-2xl text-sm leading-6 text-warm-gray/75 lg:block">
+        Consulta y responde conversaciones como anfitrión o huésped. Una
+        conversación no crea ni aprueba una solicitud de alquiler.
+      </p>
+    </div>
+  </header>
+
+  {
+    invalidContactContext && (
+      <p
+        role="alert"
+        class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+      >
+        Este enlace no contiene una oferta válida para consultar.{" "}
+        <a
+          href="/buscar"
+          class="font-semibold underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Busca un anuncio y vuelve a contactar al anfitrión.
+        </a>
+      </p>
+    )
+  }
+  {
+    initialConversationUnavailable && (
+      <p
+        role="status"
+        class="rounded-2xl border border-warm-gray/15 bg-white p-4 text-sm text-warm-gray"
+      >
+        No se pudo abrir esa conversación. Elige una de las conversaciones
+        disponibles en tu bandeja.
+      </p>
+    )
+  }
+
+  <ChatWindow
+    client:load
+    conversations={conversations}
+    messages={messages}
+    initialHasMoreMessages={initialHasMoreMessages}
+    initialMessageCursor={initialMessageCursor}
+    initialMessageSyncedAt={initialMessageSyncedAt}
+    initialMessagesLoaded={initialMessagesLoaded}
+    initialConversationId={initialConversationId}
+    openConversationOnMobile={openConversationOnMobile}
+    hostLayout={hostLayout}
+    initialConversationUnavailable={initialConversationUnavailable}
+    currentUserId={currentUserId}
+    hasMoreConversations={hasMoreConversations}
+    perspective={perspective}
+    canFilterByRole={canFilterByRole}
+    searchQuery={searchQuery}
+    unreadOnly={unreadOnly}
+    contactContext={contactContext}
+    initialLoadError={initialLoadError}
+  />
+</div>

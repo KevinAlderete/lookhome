@@ -1,0 +1,170 @@
+---
+import PropertyCard from "@/components/astro/PropertyCard.astro";
+import type { SearchResultItem } from "@/features/search/types";
+
+interface Props {
+  items: SearchResultItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  queryString: string;
+  locationLabel?: string;
+  priceSummary?: string | null;
+  isAuthenticated?: boolean;
+  hasError?: boolean;
+}
+
+const {
+  items = [],
+  total = 0,
+  page = 1,
+  pageSize = 12,
+  queryString = "",
+  locationLabel = "Resultados",
+  priceSummary = null,
+  isAuthenticated = false,
+  hasError = false,
+} = Astro.props;
+
+const totalPages = Math.max(1, Math.ceil(total / pageSize));
+const makePageHref = (targetPage: number) => {
+  const params = new URLSearchParams(queryString);
+  params.set("page", String(targetPage));
+  return `/buscar?${params.toString()}`;
+};
+const retryHref = queryString ? `/buscar?${queryString}` : "/buscar";
+const countLabel = `${total} ${total === 1 ? "resultado" : "resultados"}`;
+---
+
+<section
+  class="w-full p-3"
+  aria-labelledby="results-title"
+  aria-live="polite"
+>
+  <header class="results-heading flex items-end justify-between gap-3 border-b border-warm-gray/10 px-1 pb-3">
+    <div class="min-w-0">
+      <p class="truncate text-sm font-semibold text-terracotta-strong">
+        {locationLabel}
+      </p>
+      <h2 id="results-title" class="mt-0.5 text-xl font-bold text-warm-gray">
+        {countLabel}
+      </h2>
+      {priceSummary && (
+        <p class="mt-1 text-xs font-semibold text-warm-gray/70">{priceSummary}</p>
+      )}
+    </div>
+    <span class="rounded-full bg-[#fae9e2] px-3 py-1.5 text-xs font-semibold text-terracotta-strong">
+      Página {page}
+    </span>
+  </header>
+
+  <p class="px-1 pt-2 text-[11px] leading-4 text-warm-gray/65">
+    Domicilio y pin exactos públicos; piso e interior privados.
+  </p>
+
+  {
+    hasError ? (
+      <div class="my-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center" role="alert">
+        <h3 class="text-lg font-bold text-red-900">No pudimos cargar los resultados</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm text-red-800">
+          La búsqueda no está disponible en este momento. Conservamos tus filtros para que puedas intentarlo otra vez.
+        </p>
+        <a href={retryHref} data-search-navigation class="mt-5 inline-flex rounded-xl bg-warm-gray px-5 py-3 font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta">
+          Reintentar búsqueda
+        </a>
+      </div>
+    ) : items.length === 0 ? (
+      <div class="my-5 rounded-2xl border border-dashed border-warm-gray/25 bg-cream px-6 py-12 text-center">
+        <h3 class="text-lg font-bold text-warm-gray">No encontramos anuncios</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-warm-gray/75">
+          Prueba otra ubicación o elimina algunos filtros para descubrir más opciones.
+        </p>
+        <a href="/buscar" data-search-navigation class="mt-5 inline-flex rounded-xl bg-terracotta px-5 py-3 font-bold text-[#231f1d] transition hover:bg-soft-coral focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warm-gray">
+          Ver todos los anuncios
+        </a>
+      </div>
+    ) : (
+      <div class="mt-3 grid gap-3">
+        {items.map((item, index) => (
+          <PropertyCard
+            item={item}
+            isAuthenticated={isAuthenticated}
+            priority={index === 0}
+            returnTo={queryString ? `/buscar?${queryString}` : "/buscar"}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  {!hasError && totalPages > 1 && (
+    <nav class="mt-4 flex items-center justify-between gap-2 border-t border-warm-gray/10 px-1 pb-2 pt-3" aria-label="Paginación de resultados">
+      {page > 1 ? (
+        <a href={makePageHref(page - 1)} rel="prev" data-search-navigation class="rounded-xl border border-warm-gray/25 px-3 py-2 text-sm font-bold text-warm-gray transition hover:border-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta">
+          Anterior
+        </a>
+      ) : (
+        <span aria-disabled="true" class="rounded-xl bg-warm-gray/8 px-3 py-2 text-sm font-bold text-warm-gray/45">Anterior</span>
+      )}
+      <span class="text-center text-sm font-semibold text-warm-gray/75">
+        Página {page} de {totalPages}
+      </span>
+      {page < totalPages ? (
+        <a href={makePageHref(page + 1)} rel="next" data-search-navigation class="rounded-xl border border-warm-gray/25 px-3 py-2 text-sm font-bold text-warm-gray transition hover:border-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta">
+          Siguiente
+        </a>
+      ) : (
+        <span aria-disabled="true" class="rounded-xl bg-warm-gray/8 px-3 py-2 text-sm font-bold text-warm-gray/45">Siguiente</span>
+      )}
+    </nav>
+  )}
+</section>
+
+<script>
+  import { dispatchSearchUiEvent } from "@/features/search/events";
+
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(".listing-card"));
+
+  document.querySelectorAll<HTMLImageElement>("[data-property-image]").forEach((image) => {
+    image.addEventListener("error", () => {
+      if (!image.src.endsWith("/property-placeholder.svg")) {
+        image.src = "/property-placeholder.svg";
+      }
+    });
+  });
+
+  const clearActiveCards = () => {
+    cards.forEach((card) => card.classList.remove("ring-2", "ring-terracotta", "shadow-lg"));
+  };
+
+  cards.forEach((card) => {
+    const listingId = card.dataset.listingId ?? null;
+    const activate = () => {
+      clearActiveCards();
+      card.classList.add("ring-2", "ring-terracotta", "shadow-lg");
+      dispatchSearchUiEvent("lookhome:listing-hover", { listingId });
+    };
+    const deactivate = () => {
+      card.classList.remove("ring-2", "ring-terracotta", "shadow-lg");
+      dispatchSearchUiEvent("lookhome:listing-hover", { listingId: null });
+    };
+
+    card.addEventListener("mouseenter", activate);
+    card.addEventListener("mouseleave", deactivate);
+    card.addEventListener("focusin", activate);
+    card.addEventListener("focusout", deactivate);
+  });
+
+  window.addEventListener("lookhome:marker-hover", (event) => {
+    const listingId = event.detail.listingId;
+    clearActiveCards();
+    if (!listingId) return;
+    const target = cards.find((card) => card.dataset.listingId === listingId);
+    if (!target) return;
+    target.classList.add("ring-2", "ring-terracotta", "shadow-lg");
+    target.scrollIntoView({
+      block: "nearest",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  });
+</script>
